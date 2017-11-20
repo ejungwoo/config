@@ -5,7 +5,7 @@ export PS1="@ \h:\W > "
 alias rm='rm -i'
 alias ssh='ssh -Y -A -C'
 alias vi='vim -O'
-alias ll='ls -l'
+alias ll='ls -lah'
 alias root='root -l'
 alias ro='root'
 
