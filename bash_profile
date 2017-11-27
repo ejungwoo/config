@@ -33,8 +33,8 @@ alias gitd='git diff -U0'
 
 export OPENSSL_ROOT_DIR=/usr/local/opt/openssl/
 
-echo "@@ LAMPS:      'kebi'"
-echo "@@ SpiRITROOT: 'spirit'"
+echo "# kebi"
+echo "# spirit"
 
 function kebi() {
   export KEBIPATH='/Users/ejungwoo/KEBI'
