@@ -11,9 +11,12 @@ namespace style
   TLegend *make (TLegend *legend);
   TCanvas *make (TCanvas *cvs);
 
-     void save  (TCanvas *cvs,TString format="pdf");
+      TH1 *free (TH1     *h);
 
-     void stat  (Int_t opt);
+     void save  (TCanvas *cvs, TString format="png");
+
+     void gstat (Int_t opt);
+     void zcolor(Int_t opt);
 
   /********************************************************/
 
@@ -26,8 +29,8 @@ namespace style
      int fYCvs=1100;
 
   double fWDefault=0.1;
-  double fWUnit=0.011;
-  double fHUnit=0.06;
+  double fWUnit=0.018;
+  double fHUnit=0.07;
 
   double fWStat=0.25;
   double fHStat=0.18;
@@ -49,8 +52,17 @@ namespace style
   double fYTitleOffset=1.35;
 };
 
-void style::stat(Int_t opt) {
+void style::gstat(Int_t opt) {
   gStyle->SetOptStat(opt);
+}
+
+void style::zcolor(Int_t opt) {
+  if (opt == 0)
+    gStyle -> SetPalette(kBird);
+  else if (opt == 1)
+    gStyle -> SetPalette(kRainBow);
+  else
+    gStyle -> SetPalette(kGreyScale);
 }
 
 void style::init() {
@@ -141,6 +153,12 @@ TLegend *style::make(TLegend *legend) {
 TF1 *style::make(TF1 *f) {
   f -> SetNpx(1000);
   return f;
+}
+
+TH1 *style::free(TH1 *h) {
+  h -> GetXaxis() -> SetNdivisions(508);
+  h -> GetYaxis() -> SetNdivisions(508);
+  return h;
 }
 
 void style::save(TCanvas *cvs,TString format) {
