@@ -13,10 +13,10 @@ if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 
-map  :w :!root -l %
-map  :w :!python %
-map  :w :!pdflatex %
-map  :w :!g++ % -o %<
-map  :!./%<
+" map  :w :!root -l %
+" map  :w :!python %
+" map  :w :!pdflatex %
+" map  :w :!g++ % -o %<
+" map  :!./%<
 
 colorscheme jellybeans

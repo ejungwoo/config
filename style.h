@@ -1,9 +1,22 @@
 // ROOT plot style sheet
 
+#include "TF1.h"
+#include "TH1.h"
+#include "TH1D.h"
+#include "TGraph.h"
+#include "TStyle.h"
+#include "TSystem.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+#include "TLegendEntry.h"
+#include <iostream>
+using namespace std;
+
 namespace style
 {
   TCanvas *c    (TString name="",double w=0,double h=0);
   TCanvas *cc   (TString name="",double w=0,double h=0);
+  TCanvas *cc2  (TString name="",double w=0,double h=0);
 
    TGraph *make (TGraph  *graph);
       TH1 *make (TH1     *h);
@@ -16,6 +29,7 @@ namespace style
      void save  (TCanvas *cvs, TString format="png");
 
      void gstat (Int_t opt);
+     void fstat (Int_t opt);
      void zcolor(Int_t opt);
 
   /********************************************************/
@@ -25,6 +39,9 @@ namespace style
      int fICvs=0;
      int fWCvs=680;
      int fHCvs=550;
+
+     int fWCvs2=900;
+     int fHCvs2=550;
 
      int fYCvs=1100;
 
@@ -56,11 +73,23 @@ void style::gstat(Int_t opt) {
   gStyle->SetOptStat(opt);
 }
 
+void style::fstat(Int_t opt) {
+  gStyle->SetOptFit(opt);
+}
+
 void style::zcolor(Int_t opt) {
   if (opt == 0)
     gStyle -> SetPalette(kBird);
   else if (opt == 1)
     gStyle -> SetPalette(kRainBow);
+  else if (opt == 2)
+    gStyle -> SetPalette(kDeepSea);
+  else if (opt == 3)
+    gStyle -> SetPalette(kAvocado);
+  else if (opt == 4)
+    gStyle -> SetPalette(kBlueGreenYellow);
+  else if (opt == 5)
+    gStyle -> SetPalette(kBrownCyan);
   else
     gStyle -> SetPalette(kGreyScale);
 }
@@ -81,6 +110,17 @@ TCanvas *style::c(TString name,double w,double h) {
   init();
   if(w==0) w=fWCvs;
   if(h==0) h=fHCvs;
+  if(name.IsNull()) name=Form("canvas-%d",fICvs);
+  auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
+  make(cvs);
+  return cvs;
+}
+
+TCanvas *style::cc2(TString name,double w,double h) {
+  fRMargin=fRMarginH2;
+  init();
+  if(w==0) w=fWCvs2;
+  if(h==0) h=fHCvs2;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
   make(cvs);
@@ -132,8 +172,9 @@ TLegend *style::make(TLegend *legend) {
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
   auto lmax=0;
   TIter next(legend->GetListOfPrimitives());
-  while (auto make=(TLegendEntry *) next()) {
-    auto l=TString(make->GetLabel()).Length();
+  TLegendEntry *label;
+  while ((label=(TLegendEntry *) next())) {
+    auto l=TString(label->GetLabel()).Length();
     if(lmax<l) lmax=l;
   }
   
