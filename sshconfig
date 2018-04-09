@@ -1,0 +1,26 @@
+Host *
+ServerAliveInterval 120
+
+Host nw
+  HostName 169.254.163.112
+  User lamps
+
+Host nw2
+  HostName 192.168.2.13
+  User lamps
+
+Host nscl
+  HostName nsclgw1.nscl.msu.edu
+  User leej
+
+Host spnw
+  HostName 192.168.9.100
+  User spirit
+
+Host nk
+  HostName nuclear.korea.ac.kr
+  User ejungwoo
+
+Host gw
+  HostName hokusai.riken.jp
+  User ejungwoo
