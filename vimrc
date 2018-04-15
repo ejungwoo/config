@@ -20,3 +20,6 @@ endif
 " map  :!./%<
 
 colorscheme jellybeans
+colorscheme monokai
+colorscheme thaumaturge
+colorscheme vim-material
