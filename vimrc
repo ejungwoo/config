@@ -24,3 +24,5 @@ colorscheme jellybeans
 colorscheme monokai
 colorscheme thaumaturge
 colorscheme vim-material
+colorscheme artesanal
+colorscheme soft-era
