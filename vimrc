@@ -8,6 +8,7 @@ set tabstop=2
 set sw=2
 set formatoptions=croql
 set expandtab
+set cursorline
 
 if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
