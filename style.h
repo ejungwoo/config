@@ -16,37 +16,43 @@ using namespace std;
 
 namespace style
 {
-  TCanvas *c    (TString name="",double w=0,double h=0);
-  TCanvas *cc   (TString name="",double w=0,double h=0);
-  TCanvas *cc2  (TString name="",double w=0,double h=0);
-  TCanvas *cc3  (TString name="",double w=0,double h=0);
+   void v(int verbose = 1);
 
-  TObject *make (TObject *o);
-   TGraph *make (TGraph  *graph);
-      TH1 *make (TH1     *h);
-      TF1 *make (TF1     *f);
-  TLegend *make (TLegend *legend);
-  TCanvas *make (TCanvas *cvs);
-    TCutG *cutg (TString f, TString c, TString x, TString y);
-    TCutG *cutg (TFile  *f, TString c, TString x, TString y);
+   TCanvas *c    (TString name="",double w=0,double h=0);
+   TCanvas *cc   (TString name="",double w=0,double h=0);
+   TCanvas *cc2  (TString name="",double w=0,double h=0);
+   TCanvas *cc3  (TString name="",double w=0,double h=0);
 
-      TH1 *free (TH1     *h);
-      TH1 *fm   (TH1 *h);
+   TObject *make (TObject *o);
+    TGraph *make (TGraph  *graph);
+       TH1 *make (TH1     *h);
+       TF1 *make (TF1     *f);
+   TLegend *make (TLegend *legend);
+   TCanvas *make (TCanvas *cvs);
+     TCutG *cutg (TString f, TString c, TString x, TString y);
+     TCutG *cutg (TFile  *f, TString c, TString x, TString y);
 
-     void save  (TCanvas *cvs, TString format="png");
+       TH1 *free (TH1     *h);
+       TH1 *fm   (TH1 *h);
 
-     void gstat (Int_t opt);
-     void fstat (Int_t opt);
-     void zcolor(Int_t opt);
+      void save  (TCanvas *cvs, TString format="png");
 
-      TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
-      TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
+      void gstat (int opt);
+      void fstat (int opt);
+      void zcolor(int opt);
 
-      TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,Int_t nx,Double_t x1,Double_t x2,Int_t ny=-1,Double_t y1=-1,Double_t y2=-1);
+       TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
+       TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
+
+       TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1);
+
+  Double_t max(TH1 *h);
 
   /********************************************************/
 
   void init();
+
+     int fVerbose = 1;
 
      int fICvs=0;
      int fWCvs=680;
@@ -79,58 +85,19 @@ namespace style
 
   double fXTitleOffset=1.15;
   double fYTitleOffset=1.35;
-
-     int fIDrop=0;
-
-  class dro : public TNamed {
-    public:
-      dro(const char *name="", const char *title="") : TNamed(name, title) {}
-
-      void add(TObject *obj, TString opt) {
-        drawings.push_back(obj);
-        options.push_back(opt);
-      }
-
-      TCanvas *draw(TString dopt="") {
-             if (cvs != nullptr) return cvs;
-             if (dopt.Index("0")>=0) cvs = c(fName);
-        else if (dopt.Index("1")>=0) cvs = cc(fName);
-        else if (dopt.Index("2")>=0) cvs = cc2(fName);
-        else if (dopt.Index("3")>=0) cvs = cc3(fName);
-        else                         cvs = cc(fName);
-        for (auto i = 0; i < drawings.size(); ++i) {
-          if (drawings[i] -> InheritsFrom("TH1"))
-            free(drawings[i]);
-          make(drawings[i]) -> Draw(options[i]);
-        }
-        if (dopt.Index("z")>=0) cvs -> SetLogz();
-        if (dopt.Index("y")>=0) cvs -> SetLogy();
-        if (dopt.Index("x")>=0) cvs -> SetLogx();
-        if (dopt.Index("g")>=0) cvs -> SetGrid();
-        if (dopt.Index("png")>=0) save(cvs,"png");
-        if (dopt.Index("pdf")>=0) save(cvs,"pdf");
-        return cvs;
-      }
-
-      vector<TObject*> drawings;
-      vector<TString> options;
-      TCanvas *cvs = nullptr;
-  };
-
-  vector<dro> dros;
-  style::dro gdro(int i=-1);
-  style::dro add(TObject *obj, TString opt, int i=-2);
-  TCanvas *draw(int i);
 }; 
-void style::gstat(Int_t opt) {
+
+void style::v(int verbose = 1) { fVerbose = verbose; }
+
+void style::gstat(int opt) {
   gStyle->SetOptStat(opt);
 }
 
-void style::fstat(Int_t opt) {
+void style::fstat(int opt) {
   gStyle->SetOptFit(opt);
 }
 
-void style::zcolor(Int_t opt) {
+void style::zcolor(int opt) {
   if (opt == 0)
     gStyle -> SetPalette(kBird);
   else if (opt == 1)
@@ -145,6 +112,11 @@ void style::zcolor(Int_t opt) {
     gStyle -> SetPalette(kBrownCyan);
   else
     gStyle -> SetPalette(kGreyScale);
+}
+
+Double_t style::max(TH1 *h) {
+  auto bin = h -> GetMaximumBin();
+  return h -> GetBinContent(bin);
 }
 
 void style::init() {
@@ -316,34 +288,15 @@ TF1 *style::fitgg(TH1 *h,Double_t c,Option_t *opt) {
   return f;
 }
 
-TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,Int_t nx,Double_t x1,Double_t x2,Int_t ny,Double_t y1,Double_t y2) {
-  cout<<name<<": "<<tree -> GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]"<<endl;
+TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) {
+  if(fVerbose>0)cout<<name<<": "<<tree -> GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]->";
   TH1 *h;
   if(ny<0) h=new TH1D(name,title,nx,x1,x2);
   else     h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
-  tree->Project(name,formula,cut);
+  auto n=tree->Project(name,formula,cut);
+  if(fVerbose>0)cout<<n<<endl;
   return fm(h);
 };
-
-style::dro style::gdro(int i) {
-  int num_dros = dros.size();
-  if (i==-2)
-    return dros[num_dros-1];
-  if (i==-1) {
-    dro dro1;
-    dros.push_back(dro1);
-    return dro1;
-  }
-  if (num_dros<=i) {
-    cout << "nop" << endl;
-    return nullptr;
-  }
-  return dros[i];
-}
-
-TCanvas *style::draw(int i) { return dros[i].draw(); }
-
-style::dro style::add(TObject *obj, TString opt, int i) { dros[i].add(obj,opt); return dros[i]; }
 
 TCutG *style::cutg(TString f, TString c, TString x, TString y) {
   auto file = new TFile(f.Data(),"read");
@@ -353,8 +306,7 @@ TCutG *style::cutg(TString f, TString c, TString x, TString y) {
   return cg;
 }
 
-TCutG *cutg(TFile  *file, TString c, TString x, TString y)
-{
+TCutG *cutg(TFile  *file, TString c, TString x, TString y) {
   auto cg = (TCutG *) file -> Get(c.Data());
   cg -> SetVarX(x.Data());
   cg -> SetVarY(y.Data());
