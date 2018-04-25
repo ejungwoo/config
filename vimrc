@@ -8,7 +8,7 @@ set tabstop=2
 set sw=2
 set formatoptions=croql
 set expandtab
-set cursorline
+" set cursorline
 
 if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
@@ -24,5 +24,5 @@ colorscheme jellybeans
 colorscheme monokai
 colorscheme thaumaturge
 colorscheme vim-material
-colorscheme artesanal
 colorscheme soft-era
+colorscheme artesanal

@@ -1,4 +1,10 @@
-// ROOT plot style sheet
+/* ROOT plot style sheet
+ *
+ * - HOW TO USE
+ *
+ *   #include "style.h
+ *   using namespace style;
+*/
 
 #include "TF1.h"
 #include "TH1.h"
@@ -16,37 +22,37 @@ using namespace std;
 
 namespace style
 {
-   void v(int verbose = 1);
+   void v(int verbose = 1); ///< verbosity - 0:silent, 1:default
 
-   TCanvas *c    (TString name="",double w=0,double h=0);
-   TCanvas *cc   (TString name="",double w=0,double h=0);
-   TCanvas *cc2  (TString name="",double w=0,double h=0);
-   TCanvas *cc3  (TString name="",double w=0,double h=0);
+   TCanvas *c    (TString name="",double w=0,double h=0); ///<  680 x 550 - 1D style
+   TCanvas *cc   (TString name="",double w=0,double h=0); ///<  680 x 550 - 2D style
+   TCanvas *cc2  (TString name="",double w=0,double h=0); ///<  900 x 550 - 2D style
+   TCanvas *cc3  (TString name="",double w=0,double h=0); ///< 1200 x 800 - 2D style
 
-   TObject *make (TObject *o);
+   TObject *make (TObject *o);      ///< make object stylish! - graph, histogram, function, legend, canvas
     TGraph *make (TGraph  *graph);
        TH1 *make (TH1     *h);
        TF1 *make (TF1     *f);
    TLegend *make (TLegend *legend);
    TCanvas *make (TCanvas *cvs);
-     TCutG *cutg (TString f, TString c, TString x, TString y);
-     TCutG *cutg (TFile  *f, TString c, TString x, TString y);
+     TCutG *cutg (TString f, TString c, TString x, TString y); ///< set TCutG from file name
+     TCutG *cutg (TFile  *f, TString c, TString x, TString y); ///< set TCutG from file
 
-       TH1 *free (TH1     *h);
-       TH1 *fm   (TH1 *h);
+       TH1 *free (TH1 *h); // make axis labels feel free!
+     //TH1 *fm   (TH1 *h);
 
-      void save  (TCanvas *cvs, TString format="png");
+      void save  (TCanvas *cvs, TString format="png"); ///< save cavans ./figures/[canvas name].[version-automatically updated].[format]
 
-      void gstat (int opt);
-      void fstat (int opt);
-      void zcolor(int opt);
+      void gstat (int opt); ///< equalivant to gStyle -> SetOptStat(opt);
+      void fstat (int opt); ///< equalivant to gStyle -> SetOptFit(opt);
+      void zcolor(int opt); ///< set z-palette color to 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale
 
-       TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
-       TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0");
+       TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
+       TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
 
-       TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1);
+       TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< draw from tree
 
-  Double_t max(TH1 *h);
+  Double_t max(TH1 *h); ///< maximum value of histogram
 
   /********************************************************/
 
@@ -98,20 +104,14 @@ void style::fstat(int opt) {
 }
 
 void style::zcolor(int opt) {
-  if (opt == 0)
-    gStyle -> SetPalette(kBird);
-  else if (opt == 1)
-    gStyle -> SetPalette(kRainBow);
-  else if (opt == 2)
-    gStyle -> SetPalette(kDeepSea);
-  else if (opt == 3)
-    gStyle -> SetPalette(kAvocado);
-  else if (opt == 4)
-    gStyle -> SetPalette(kBlueGreenYellow);
-  else if (opt == 5)
-    gStyle -> SetPalette(kBrownCyan);
-  else
-    gStyle -> SetPalette(kGreyScale);
+  if(fVerbose>0) cout << "zcolor(" << opt << ") >> 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale" << endl;
+       if (opt == 0) gStyle -> SetPalette(kBird);
+  else if (opt == 1) gStyle -> SetPalette(kRainBow);
+  else if (opt == 2) gStyle -> SetPalette(kDeepSea);
+  else if (opt == 3) gStyle -> SetPalette(kAvocado);
+  else if (opt == 4) gStyle -> SetPalette(kBlueGreenYellow);
+  else if (opt == 5) gStyle -> SetPalette(kBrownCyan);
+  else               gStyle -> SetPalette(kGreyScale);
 }
 
 Double_t style::max(TH1 *h) {
@@ -208,6 +208,7 @@ TH1 *style::make(TH1 *h) {
   h->GetYaxis()->SetTitleSize(fAxisTitleSize);
   h->GetYaxis()->SetLabelSize(fAxisLabelSize);
   h->GetZaxis()->SetLabelSize(fAxisLabelSize);
+  free(h);
   return h;
 }
 
@@ -247,7 +248,7 @@ TH1 *style::free(TH1 *h) {
   return h;
 }
 
-TH1 *style::fm(TH1 *h) { return free(make(h)); }
+//TH1 *style::fm(TH1 *h) { return free(make(h)); }
 
 void style::save(TCanvas *cvs,TString format) {
   TString path=TString(gSystem->Getenv("PWD"))+"/figures/";
@@ -295,7 +296,7 @@ TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,i
   else     h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
   auto n=tree->Project(name,formula,cut);
   if(fVerbose>0)cout<<n<<endl;
-  return fm(h);
+  return make(h);
 };
 
 TCutG *style::cutg(TString f, TString c, TString x, TString y) {
