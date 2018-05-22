@@ -10,6 +10,7 @@
 #include "TH1.h"
 #include "TH1D.h"
 #include "TCutG.h"
+#include "TMath.h"
 #include "TNamed.h"
 #include "TGraph.h"
 #include "TStyle.h"
@@ -47,12 +48,23 @@ namespace style
       void fstat (int opt); ///< equalivant to gStyle -> SetOptFit(opt);
       void zcolor(int opt); ///< set z-palette color to 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale
 
+      void colorwheel();
+
        TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
        TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
 
        TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< draw from tree
 
-  Double_t max(TH1 *h); ///< maximum value of histogram
+  Double_t max (TH1 *h);                             ///< maximum value of histogram
+  Double_t max (TH1 *h, Double_t &bin, Double_t &x); ///< maximum value of histogram
+
+  Double_t fwrm(TF1 *f, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q);
+  Double_t fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q);
+  Double_t fwhm(TF1 *f);
+
+  Double_t fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< Full Width at ratio of maximum
+  Double_t fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q); ///< Full Width Half Maximum
+  Double_t fwhm(TH1 *h);                                          ///< Full Width Half Maximum
 
   /********************************************************/
 
@@ -114,9 +126,132 @@ void style::zcolor(int opt) {
   else               gStyle -> SetPalette(kGreyScale);
 }
 
+void style::colorwheel() {
+  TColorWheel *w = new TColorWheel();
+  w->SetCanvas(c("cw",800,800));
+  w->Draw();
+}
+
 Double_t style::max(TH1 *h) {
-  auto bin = h -> GetMaximumBin();
+  Double_t bin, x;
+  return max(h, bin, x);
+}
+
+Double_t style::max (TH1 *h, Double_t &bin, Double_t &x) {
+  bin = h -> GetMaximumBin();
+  x = h -> GetXaxis() -> GetBinCenter(bin);
   return h -> GetBinContent(bin);
+}
+
+Double_t style::fwrm(TF1 *f, Double_t ratio, Double_t nx, Double_t &x0, Double_t &x1, Double_t &q)
+{
+  Double_t x, xl, xh;
+  f -> GetRange(xl, xh);
+  auto dx = (xh-xl)/nx;
+
+  auto valmax = -DBL_MAX;
+  auto xmax = xl;
+
+  for (x=xl;x<=xh;x+=dx) {
+    auto y = f -> Eval(x);
+    if (valmax < y) {
+      valmax = y;
+      xmax = x;
+    }
+  }
+  auto rmax = ratio*valmax;
+
+  double dy1=DBL_MAX, dy0=DBL_MAX;
+
+  for (x=xmax;x<=xh;x+=dx) {
+    auto y = f -> Eval(x);
+    auto dy = TMath::Abs(y-rmax);
+    if (dy>dy1) {
+      x1 = x-dx;
+      break;
+    }
+    dy1 = dy;
+  }
+  if(x==xh) { q = -1; x0 = -1; x1 = -1; return -1; }
+
+  for (x=xmax;x>=xl;x-=dx) {
+    auto y = f -> Eval(x);
+    auto dy = TMath::Abs(y-rmax);
+    if (dy>dy0) {
+      x0 = x+dx;
+      break;
+    }
+    dy0 = dy;
+  }
+  if(x==xl) { q = -1; x0 = -1; x1 = -1; return -1; } 
+
+  q = TMath::Sqrt(dy0*dy0 + dy1*dy1);
+
+  return x1-x0;
+}
+
+Double_t style::fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q)
+{
+  return fwrm(f, 0.5, 10000, x0, x1, q);
+}
+
+Double_t style::fwhm(TF1 *f)
+{
+  Double_t x0, x1 ,q;
+  return fwhm(f, x0, x1, q);
+}
+
+Double_t style::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q)
+{
+  if(fVerbose>0) cout<<"assuming histogram "<<h->GetName()<<" is smooth"<<endl;
+
+  auto hist = (TH1D *) h;
+  Double_t binmax, xmax;
+  auto valmax = max(hist,binmax,xmax);
+  auto rmax = ratio*valmax;
+
+  auto n = hist -> GetNbinsX();
+  auto xl = hist->GetXaxis()->GetBinLowEdge(1);
+  auto xh = hist->GetXaxis()->GetBinUpEdge(n);
+  auto nn = ndx*(xh-xl)/n;
+
+  double x, dy1=DBL_MAX, dy0=DBL_MAX;
+  for (x=xmax;x<=xh;x+=nn) {
+    auto y = hist -> Interpolate(x);
+    auto dy = TMath::Abs(y-rmax);
+    if (dy>dy1) {
+      x1 = x-nn;
+      break;
+    }
+    dy1 = dy;
+  }
+  if(x==xh) { q = -1; x0 = -1; x1 = -1; return -1; }
+
+  for (x=xmax;x>=xl;x-=nn) {
+    auto y = hist -> Interpolate(x);
+    auto dy = TMath::Abs(y-rmax);
+    if (dy>dy0) {
+      x0 = x+nn;
+      break;
+    }
+    dy0 = dy;
+  }
+  if(x==xl) { q = -1; x0 = -1; x1 = -1; return -1; } 
+
+  q = TMath::Sqrt(dy0*dy0 + dy1*dy1);
+
+  return x1-x0;
+}
+
+Double_t style::fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q)
+{
+  return fwrm(h, 0.5, 0.1, x0, x1, q);
+}
+
+Double_t style::fwhm(TH1 *h)
+{
+  Double_t x0, x1 ,q;
+  return fwhm(h, x0, x1, q);
 }
 
 void style::init() {

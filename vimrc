@@ -20,9 +20,9 @@ endif
 " map  :w :!g++ % -o %<
 " map  :!./%<
 
-colorscheme jellybeans
 colorscheme monokai
 colorscheme thaumaturge
 colorscheme vim-material
 colorscheme soft-era
 colorscheme artesanal
+colorscheme jellybeans
