@@ -18,6 +18,8 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TLegendEntry.h"
+#include "TObjArray.h"
+#include "TObjString.h"
 #include <iostream>
 using namespace std;
 
@@ -65,6 +67,11 @@ namespace style
   Double_t fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< Full Width at ratio of maximum
   Double_t fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q); ///< Full Width Half Maximum
   Double_t fwhm(TH1 *h);                                          ///< Full Width Half Maximum
+
+  void pfname(TString str, TString &pathname, TString &filename, TString delim="/");
+  TString firstname(TString str, TString delim=".");
+  TString lastname(TString str, TString delim="/");
+  TString justname(TString str);
 
   /********************************************************/
 
@@ -447,4 +454,29 @@ TCutG *cutg(TFile  *file, TString c, TString x, TString y) {
   cg -> SetVarX(x.Data());
   cg -> SetVarY(y.Data());
   return cg;
+}
+
+void style::pfname(TString str, TString &pathname, TString &filename, TString delim="/") {
+  TObjArray *tokens = str.Tokenize(delim);
+  auto n = tokens -> GetEntries();
+  pathname = "";
+  pathname = ((TObjString *) tokens -> At(0)) -> GetString();
+  if (n-1>1)
+    for (auto i=1; i<n-1; ++i)
+      pathname = pathname+delim+(((TObjString *) tokens -> At(i)) -> GetString());
+  filename = ((TObjString *) tokens -> At(n-1)) -> GetString();
+}
+
+TString style::firstname(TString str, TString delim=".") {
+  TObjArray *tokens = str.Tokenize(delim);
+  return ((TObjString *) tokens -> At(0)) -> GetString();
+}
+
+TString style::lastname(TString str, TString delim="/") {
+  TObjArray *tokens = str.Tokenize(delim);
+  return ((TObjString *) tokens -> At(tokens->GetEntries()-1)) -> GetString();
+}
+
+TString style::justname(TString str) {
+  return firstname(lastname(str));
 }
