@@ -1,9 +1,10 @@
 /* ROOT plot style sheet
  *
  * - HOW TO USE
- *
- *   #include "style.h
- *   using namespace style;
+
+#include "style.h"
+using namespace style;
+
 */
 
 #include "TF1.h"
@@ -56,6 +57,7 @@ namespace style
        TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
 
        TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< draw from tree
+       TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< draw from tree
 
   Double_t max (TH1 *h);                             ///< maximum value of histogram
   Double_t max (TH1 *h, Double_t &bin, Double_t &x); ///< maximum value of histogram
@@ -432,6 +434,16 @@ TF1 *style::fitgg(TH1 *h,Double_t c,Option_t *opt) {
 }
 
 TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) {
+  if(fVerbose>0)cout<<name<<": "<<tree -> GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]->";
+  TH1 *h;
+  if(ny<0) h=new TH1D(name,title,nx,x1,x2);
+  else     h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
+  auto n=tree->Project(name,formula,cut);
+  if(fVerbose>0)cout<<n<<endl;
+  return make(h);
+};
+
+TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) {
   if(fVerbose>0)cout<<name<<": "<<tree -> GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]->";
   TH1 *h;
   if(ny<0) h=new TH1D(name,title,nx,x1,x2);
