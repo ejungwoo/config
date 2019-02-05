@@ -51,15 +51,15 @@ namespace style
   TCanvas *cc4 (TString nm="",double w=0,double h=0,TString l=""); ///< 1200 x 800 for 2D
   TCanvas *cc  (TString nm="",double w=0,double h=0,TString l="") { return cc1(nm,w,h,l); }
 
-  TCanvas *cv1 (TString l,TString nm="") { return cv1 (nm,0,0,l); }
-  TCanvas *cv2 (TString l,TString nm="") { return cv2 (nm,0,0,l); }
-  TCanvas *cv3 (TString l,TString nm="") { return cv3 (nm,0,0,l); }
-  TCanvas *cv  (TString l,TString nm="") { return cv  (nm,0,0,l); }
-  TCanvas *cc1 (TString l,TString nm="") { return cc1 (nm,0,0,l); }
-  TCanvas *cc2 (TString l,TString nm="") { return cc2 (nm,0,0,l); }
-  TCanvas *cc3 (TString l,TString nm="") { return cc3 (nm,0,0,l); }
-  TCanvas *cc4 (TString l,TString nm="") { return cc4 (nm,0,0,l); }
-  TCanvas *cc  (TString l,TString nm="") { return cc  (nm,0,0,l); }
+  TCanvas *cv1 (TString l,TString nm="",double w=0,double h=0) { return cv1 (nm,w,h,l); }
+  TCanvas *cv2 (TString l,TString nm="",double w=0,double h=0) { return cv2 (nm,w,h,l); }
+  TCanvas *cv3 (TString l,TString nm="",double w=0,double h=0) { return cv3 (nm,w,h,l); }
+  TCanvas *cv  (TString l,TString nm="",double w=0,double h=0) { return cv  (nm,w,h,l); }
+  TCanvas *cc1 (TString l,TString nm="",double w=0,double h=0) { return cc1 (nm,w,h,l); }
+  TCanvas *cc2 (TString l,TString nm="",double w=0,double h=0) { return cc2 (nm,w,h,l); }
+  TCanvas *cc3 (TString l,TString nm="",double w=0,double h=0) { return cc3 (nm,w,h,l); }
+  TCanvas *cc4 (TString l,TString nm="",double w=0,double h=0) { return cc4 (nm,w,h,l); }
+  TCanvas *cc  (TString l,TString nm="",double w=0,double h=0) { return cc  (nm,w,h,l); }
 
      TObject *make (TObject *o);       ///< make object stylish!
       TGraph *make (TGraph *gr);       ///< make graph stylish!
