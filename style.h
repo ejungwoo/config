@@ -58,8 +58,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
          TH1 *make (TH1 *h);           ///< make histogram stylish!
          TH1 *make2(TH1 *h);           ///< make histogram stylish! with bigger fonts
          TF1 *make (TF1 *f);           ///< make function stylish!
-     TLegend *make (TLegend *legend);  ///< make legend stylish!
-     TLegend *make2(TLegend *legend);  ///< make legend stylish! with bigger contents
+
+     TLegend *make (TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish!
+     TLegend *make2(TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish! with bigger contents
    TPaveText *make (TPaveText *pave);  ///< make pave text stylish!
      TCanvas *make (TCanvas *cvs);     ///< make canvas stylish!
 
@@ -68,11 +69,16 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
   TH1 *tohist(Double_t *buffer, Int_t n, TString name = "", TString title = ""); ///< make histogram with given buffer
   TH1 *tohist(Double_t *buffer, Int_t i, Int_t f, TString name = "", TString title = ""); ///< make histogram with given buffer
 
+  //TGraph *tograph(TString filename);
+
   TH1 *inv (TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
 
   TCutG *cutg (TString f, TString cutname, TString x, TString y); ///< set TCutG from file name
   TCutG *cutg (TFile  *f, TString cutname, TString x, TString y); ///< set TCutG from file
-  TH1   *cutg (TH1  *h, TCutG *cut); ///< recreate histogram with given graphical cut
+
+  TH1   *cutg    (TH1  *h, TCutG *cut); ///< recreate histogram with given graphical cut
+  TH1   *cutg_or (TH1 *h, TCutG *cut, TCutG *orcut);
+  TH1   *cutg_and(TH1 *h, TCutG *cut, TCutG *andcut);
 
   TH1 *dndx(TH1 *h); ///< make graph y aixs to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, Double_t maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
@@ -195,6 +201,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
   void cutt(); ///< cut top margin to 0.02
   void cutr(Double_t r=0.02); ///< cut right margin to 0.02
   void cuttr(Double_t r=0.02); ///< cut right margin to 0.02
+  void cutall(Double_t r=0.02); ///< cut all margin to 0.02
 
   void init();
 
@@ -229,7 +236,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
 
   double fWDefault2=0.2;
   double fWUnit2=0.012;
-  double fHUnit2=0.08;
+  double fHUnit2=0.07;
 
   double fWStat=0.25;
   double fHStat=0.18;
@@ -285,7 +292,7 @@ void style::zcolor(int opt) {
 
 void style::colorwheel() {
   TColorWheel *w=new TColorWheel();
-  w->SetCanvas(cv("cw",800,800));
+  w->SetCanvas(cv("cw",700,700));
   w->Draw();
 }
 
@@ -515,6 +522,7 @@ Double_t style::fwhm(TH1 *h)
 void style::cutt() { fTMargin = 0.04; }
 void style::cutr(Double_t r) { fRMarginH1 = r; fRMarginH2 = r; }
 void style::cuttr(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
+void style::cutall(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
 
 void style::init() {
   fXStat=1.-fRMargin;
@@ -671,7 +679,7 @@ TH1 *style::make(TH1 *h) {
   return h;
 }
 
-TLegend *style::make(TLegend *legend) {
+TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) {
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -687,18 +695,18 @@ TLegend *style::make(TLegend *legend) {
   auto x2=1.-fRMargin;
   auto x1=x2-lmax*fWUnit - fWDefault;
   if(x1>x2-fWStat) x1=x2-fWStat;
-  legend->SetX1(x1);
-  legend->SetX2(x2);
-  legend->SetY1(y1);
+  legend->SetX1(x1+dx);
+  legend->SetX2(x2+dx);
+  legend->SetY1(y1+dy);
   if(y2<0.2)
     y2=0.2;
-  legend->SetY2(y2);
+  legend->SetY2(y2+dy);
   legend->SetFillStyle(0);
   legend->SetBorderSize(0);
   return legend;
 }
 
-TLegend *style::make2(TLegend *legend) {
+TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) {
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -714,12 +722,12 @@ TLegend *style::make2(TLegend *legend) {
   auto x2=1.-fRMargin;
   auto x1=x2-lmax*fWUnit2 - fWDefault2;
   if(x1>x2-fWStat) x1=x2-fWStat;
-  legend->SetX1(x1);
-  legend->SetX2(x2);
-  legend->SetY1(y1);
+  legend->SetX1(x1+dx);
+  legend->SetX2(x2+dx);
+  legend->SetY1(y1+dy);
   if(y2<0.2)
     y2=0.2;
-  legend->SetY2(y2);
+  legend->SetY2(y2+dy);
   legend->SetFillStyle(0);
   legend->SetBorderSize(0);
   return legend;
@@ -1251,6 +1259,48 @@ TH1 *style::cutg(TH1 *h, TCutG *cut) {
       auto x=h2->GetXaxis()->GetBinCenter(binx);
       auto y=h2->GetYaxis()->GetBinCenter(biny);
       if(cut->IsInside(x,y)==1) {
+        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
+        Int_t n=h2->GetBinContent(binx,biny);
+        for (auto i=0;i<n;++i)
+          hnew->Fill(x,y);
+      }
+    }
+  }
+  return (TH1 *) hnew;
+}
+
+TH1 *style::cutg_or(TH1 *h, TCutG *cut, TCutG *orcut) {
+  auto h2 = (TH2 *) h;
+  auto hnew = (TH2 *) h2 -> Clone();
+  hnew -> Reset();
+  auto nx=h2->GetXaxis()->GetNbins();
+  auto ny=h2->GetYaxis()->GetNbins();
+  for (auto binx=1;binx<=nx;++binx) {
+    for (auto biny=1;biny<=ny;++biny) {
+      auto x=h2->GetXaxis()->GetBinCenter(binx);
+      auto y=h2->GetYaxis()->GetBinCenter(biny);
+      if(cut->IsInside(x,y)==1 || orcut->IsInside(x,y)) {
+        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
+        Int_t n=h2->GetBinContent(binx,biny);
+        for (auto i=0;i<n;++i)
+          hnew->Fill(x,y);
+      }
+    }
+  }
+  return (TH1 *) hnew;
+}
+
+TH1 *style::cutg_and(TH1 *h, TCutG *cut, TCutG *andcut) {
+  auto h2 = (TH2 *) h;
+  auto hnew = (TH2 *) h2 -> Clone();
+  hnew -> Reset();
+  auto nx=h2->GetXaxis()->GetNbins();
+  auto ny=h2->GetYaxis()->GetNbins();
+  for (auto binx=1;binx<=nx;++binx) {
+    for (auto biny=1;biny<=ny;++biny) {
+      auto x=h2->GetXaxis()->GetBinCenter(binx);
+      auto y=h2->GetYaxis()->GetBinCenter(biny);
+      if(cut->IsInside(x,y)==1 && andcut->IsInside(x,y)) {
         //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
         Int_t n=h2->GetBinContent(binx,biny);
         for (auto i=0;i<n;++i)
