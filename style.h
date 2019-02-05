@@ -41,16 +41,16 @@ namespace style
   void colorwheel(); ///< show colorwheel
   void markers(); ///< show markers
 
-  TCanvas *cv1   (TString name="",double w=0,double h=0); ///<  500 x 550 - 1D style
-  TCanvas *cv2   (TString name="",double w=0,double h=0); ///<  600 x 550 - 1D style
-  TCanvas *cv3   (TString name="",double w=0,double h=0); ///<  680 x 550 - 1D style
-  TCanvas *cv    (TString name="",double w=0,double h=0) { return cv2(name,w,h); }
+  TCanvas *cv1 (TString nm="",double w=0,double h=0,TString l=""); ///<  500 x 550 for 1D
+  TCanvas *cv2 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 1D
+  TCanvas *cv3 (TString nm="",double w=0,double h=0,TString l=""); ///<  680 x 550 for 1D
+  TCanvas *cv  (TString nm="",double w=0,double h=0,TString l="") { return cv2(nm,w,h,l); }
 
-  TCanvas *cc1  (TString name="",double w=0,double h=0); ///<  600 x 550 - 2D style
-  TCanvas *cc2  (TString name="",double w=0,double h=0); ///<  680 x 550 - 2D style
-  TCanvas *cc3  (TString name="",double w=0,double h=0); ///<  900 x 550 - 2D style
-  TCanvas *cc4  (TString name="",double w=0,double h=0); ///< 1200 x 800 - 2D style
-  TCanvas *cc   (TString name="",double w=0,double h=0) { return cc1(name,w,h); }
+  TCanvas *cc1 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 2D
+  TCanvas *cc2 (TString nm="",double w=0,double h=0,TString l=""); ///<  680 x 550 for 2D
+  TCanvas *cc3 (TString nm="",double w=0,double h=0,TString l=""); ///<  900 x 550 for 2D
+  TCanvas *cc4 (TString nm="",double w=0,double h=0,TString l=""); ///< 1200 x 800 for 2D
+  TCanvas *cc  (TString nm="",double w=0,double h=0,TString l="") { return cc1(nm,w,h,l); }
 
      TObject *make (TObject *o);       ///< make object stylish!
       TGraph *make (TGraph *gr);       ///< make graph stylish!
@@ -62,7 +62,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
      TLegend *make (TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish!
      TLegend *make2(TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish! with bigger contents
    TPaveText *make (TPaveText *pave);  ///< make pave text stylish!
-     TCanvas *make (TCanvas *cvs);     ///< make canvas stylish!
+     TCanvas *make (TCanvas *cvs, TString l="");     ///< make canvas stylish!
 
   TF1 *settitle(TF1 *f, TString title); ///< set title of function histogram
 
@@ -535,7 +535,7 @@ void style::init() {
   gStyle->SetTitleFontSize(fMainTitleSize);
 }
 
-TCanvas *style::cv1(TString name,double w,double h) {
+TCanvas *style::cv1(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC1;
@@ -546,7 +546,7 @@ TCanvas *style::cv1(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cv2(TString name,double w,double h) {
+TCanvas *style::cv2(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC2;
@@ -557,7 +557,7 @@ TCanvas *style::cv2(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cv3(TString name,double w,double h) {
+TCanvas *style::cv3(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC3;
@@ -568,7 +568,7 @@ TCanvas *style::cv3(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cc3(TString name,double w,double h) {
+TCanvas *style::cc3(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWCC2;
@@ -579,7 +579,7 @@ TCanvas *style::cc3(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cc4(TString name,double w,double h) {
+TCanvas *style::cc4(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWCC3;
@@ -590,7 +590,7 @@ TCanvas *style::cc4(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cc1(TString name,double w,double h) {
+TCanvas *style::cc1(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWC2;
@@ -601,7 +601,7 @@ TCanvas *style::cc1(TString name,double w,double h) {
   return cvs;
 }
 
-TCanvas *style::cc2(TString name,double w,double h) {
+TCanvas *style::cc2(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWC3;
@@ -621,8 +621,12 @@ TObject *style::make(TObject *o) {
   return o;
 }
 
-TCanvas *style::make(TCanvas *cvs) {
+TCanvas *style::make(TCanvas *cvs,TString logs) {
   cvs->SetMargin(fLMargin,fRMargin,fBMargin,fTMargin);
+  logs.ToLower();
+  if (logs.Index("x")>=0) cvs -> SetLogx();
+  if (logs.Index("y")>=0) cvs -> SetLogy();
+  if (logs.Index("z")>=0) cvs -> SetLogz();
   //++fICvs;
   return cvs;
 }
