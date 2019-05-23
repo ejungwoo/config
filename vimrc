@@ -26,3 +26,4 @@ colorscheme vim-material
 colorscheme soft-era
 colorscheme artesanal
 colorscheme jellybeans
+colorscheme hybrid
