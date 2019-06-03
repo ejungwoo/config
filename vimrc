@@ -1,3 +1,27 @@
+" call vundle#begin()
+" Plugin 'VundleVim/Vundle.vim'
+"  Plugin 'git://git.wincent.com/command-t.git'
+"  Plugin 'file:///home/gmarik/path/to/plugin'
+" call vundle#end()
+
+" autocmd vimenter * NERDTree
+
+
+" set nocompatible
+" filetype off
+" 
+" set rtp+=~/.vim/bundle/Vundle.vim/
+" 
+" call vundle#rc()
+" Bundle 'gmarik/vundle'
+" Bundle 'git://git.wincent.com/command-t.git'
+" 
+" filetype plugin indent on
+" 
+" Plugin 'scrooloose/nerdtree'
+
+
+
 syntax enable
 set textwidth=79
 set ruler
@@ -25,5 +49,8 @@ colorscheme thaumaturge
 colorscheme vim-material
 colorscheme soft-era
 colorscheme artesanal
+
+colorscheme onehalfdark
 colorscheme jellybeans
 colorscheme hybrid
+colorscheme onehalflight
