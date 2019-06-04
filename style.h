@@ -1,11 +1,10 @@
-/* ROOT plot style sheet
+/** ROOT plot style sheet
  *
  * - HOW TO USE
-
-#include "style.h"
-using namespace style;
-
-*/
+ *
+ * #include "style.h"
+ * using namespace style;
+ */
 
 #include "TF1.h"
 #include "TH1.h"
@@ -26,52 +25,62 @@ using namespace style;
 #include "TObjString.h"
 #include <vector>
 #include <iostream>
+
 using namespace std;
 
+/**
+ * simple list of functions
+ */
 namespace style
 {
   void v(int verbose=1); ///< verbosity "fVerbose" - 0:silent, 1:default
   void g(int graphic=1); ///< graphic verbosity "fVerboseG" - 0:silent(default), 1:draw-details
+  void o(int goption=1);
 
   TFile *gfile(TString filename); ///< save graphic if fVerboseG>1
 
   void gstat (int opt); ///< equalivant to gStyle->SetOptStat(opt);
+  void gstat (Option_t *opt);
   void fstat (int opt); ///< equalivant to gStyle->SetOptFit(opt);
   void zcolor(int opt); ///< set z-palette color to 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale
+
   void colorwheel(); ///< show colorwheel
-  void markers(); ///< show markers
+  void markers();    ///< show markers
 
   TCanvas *cv1 (TString nm="",double w=0,double h=0,TString l=""); ///<  500 x 550 for 1D
   TCanvas *cv2 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 1D
   TCanvas *cv3 (TString nm="",double w=0,double h=0,TString l=""); ///<  680 x 550 for 1D
-  TCanvas *cv  (TString nm="",double w=0,double h=0,TString l="") { return cv2(nm,w,h,l); }
+  TCanvas *cv  (TString nm="",double w=0,double h=0,TString l="") { return cv2(nm,w,h,l); } ///< cv1 equavalent
   TCanvas *cc1 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 2D
   TCanvas *cc2 (TString nm="",double w=0,double h=0,TString l=""); ///<  680 x 550 for 2D
   TCanvas *cc3 (TString nm="",double w=0,double h=0,TString l=""); ///<  900 x 550 for 2D
   TCanvas *cc4 (TString nm="",double w=0,double h=0,TString l=""); ///< 1200 x 800 for 2D
-  TCanvas *cc  (TString nm="",double w=0,double h=0,TString l="") { return cc1(nm,w,h,l); }
+  TCanvas *cc  (TString nm="",double w=0,double h=0,TString l="") { return cc1(nm,w,h,l); } ///< cc1 equavalent
 
-  TCanvas *cv1 (TString l,TString nm,double w=0,double h=0) { return cv1 (nm,w,h,l); }
-  TCanvas *cv2 (TString l,TString nm,double w=0,double h=0) { return cv2 (nm,w,h,l); }
-  TCanvas *cv3 (TString l,TString nm,double w=0,double h=0) { return cv3 (nm,w,h,l); }
-  TCanvas *cv  (TString l,TString nm,double w=0,double h=0) { return cv  (nm,w,h,l); }
-  TCanvas *cc1 (TString l,TString nm,double w=0,double h=0) { return cc1 (nm,w,h,l); }
-  TCanvas *cc2 (TString l,TString nm,double w=0,double h=0) { return cc2 (nm,w,h,l); }
-  TCanvas *cc3 (TString l,TString nm,double w=0,double h=0) { return cc3 (nm,w,h,l); }
-  TCanvas *cc4 (TString l,TString nm,double w=0,double h=0) { return cc4 (nm,w,h,l); }
-  TCanvas *cc  (TString l,TString nm,double w=0,double h=0) { return cc  (nm,w,h,l); }
+  TCanvas *cv1 (TString l,TString nm,double w=0,double h=0) { return cv1 (nm,w,h,l); } ///< cv1 equavalent with log option as 1'st parameter
+  TCanvas *cv2 (TString l,TString nm,double w=0,double h=0) { return cv2 (nm,w,h,l); } ///< cv2 equavalent with log option as 1'st parameter
+  TCanvas *cv3 (TString l,TString nm,double w=0,double h=0) { return cv3 (nm,w,h,l); } ///< cv3 equavalent with log option as 1'st parameter
+  TCanvas *cv  (TString l,TString nm,double w=0,double h=0) { return cv  (nm,w,h,l); } ///< cv  equavalent with log option as 1'st parameter
+  TCanvas *cc1 (TString l,TString nm,double w=0,double h=0) { return cc1 (nm,w,h,l); } ///< cc1 equavalent with log option as 1'st parameter
+  TCanvas *cc2 (TString l,TString nm,double w=0,double h=0) { return cc2 (nm,w,h,l); } ///< cc2 equavalent with log option as 1'st parameter
+  TCanvas *cc3 (TString l,TString nm,double w=0,double h=0) { return cc3 (nm,w,h,l); } ///< cc3 equavalent with log option as 1'st parameter
+  TCanvas *cc4 (TString l,TString nm,double w=0,double h=0) { return cc4 (nm,w,h,l); } ///< cc4 equavalent with log option as 1'st parameter
+  TCanvas *cc  (TString l,TString nm,double w=0,double h=0) { return cc  (nm,w,h,l); } ///< cc  equavalent with log option as 1'st parameter
 
-     TObject *make (TObject *o);       ///< make object stylish!
-      TGraph *make (TGraph *gr);       ///< make graph stylish!
-TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
-         TH1 *make (TH1 *h);           ///< make histogram stylish!
-         TH1 *make2(TH1 *h);           ///< make histogram stylish! with bigger fonts
-         TF1 *make (TF1 *f);           ///< make function stylish!
+  TCanvas *div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm=0.001,Float_t ym=0.001,Int_t color=0);
 
-     TLegend *make (TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish!
-     TLegend *make2(TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish! with bigger contents
-   TPaveText *make (TPaveText *pave);  ///< make pave text stylish!
-     TCanvas *make (TCanvas *cvs, TString l="");     ///< make canvas stylish!
+     TObject *make (TObject *ob);      ///< make object stylish!,            jumpto_makeo
+      TGraph *make (TGraph *gr);       ///< make graph stylish!,             jumpto_makeg
+TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jumpto_makege
+         TH1 *make (TH1 *h);           ///< make histogram stylish!,         jumpto_makeh
+         TH1 *make2(TH1 *h);           ///< make histogram stylish! bigger!, jumpto_makeh2
+         TF1 *make (TF1 *f);           ///< make function stylish!,          jumpto_makef
+
+   TPaveText *make (TPaveText *pave);            ///< make pave text stylish!, jumpto_makep
+     TCanvas *make (TCanvas *cvs, TString l=""); ///< make canvas stylish!,    jumpto_makec
+
+     TLegend *make (TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish!,        jumpto_makel
+     TLegend *make2(TLegend *legend, Double_t dx=0, Double_t dy=0);  ///< make legend stylish! bigger! jumpto_makel2
 
   TF1 *settitle(TF1 *f, TString title); ///< set title of function histogram
 
@@ -89,7 +98,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
   TH1   *cutg_or (TH1 *h, TCutG *cut, TCutG *orcut);
   TH1   *cutg_and(TH1 *h, TCutG *cut, TCutG *andcut);
 
-  TH1 *dndx(TH1 *h); ///< make graph y aixs to dn/dx where n is number of entries
+  TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, Double_t maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
   TH1 *norm_integral(TH1 *h, Double_t normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
 
@@ -97,18 +106,19 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
   TString version(); ///< return version
 
   void fsave(bool val); ///< set save canvas by save(TCanvas *)
-  void  save(TVirtualPad *cvs, TString format="png", bool version_control = true);
+  void  save(TVirtualPad *cvs, TString format="png", bool version_control = true); ///< save TVirtualPad. See as save(TCanvas *) for detail
   void  save(TCanvas *cvs, TString format="png", bool version_control = true); ///< save cavans ./figures/[canvas name].[version-automatically updated].[format]
   void  save(TString name, TCanvas *cvs, TString format="png", bool version_control = true); ///< save cavans ./figures/[name].[version-automatically updated].[format]
 
   void fwrite(bool val); ///< set write object by write(TObject *)
   void  write(TObject *obj, bool version_control = true); ///< write object ./data/[obj name].[version-automatically updated].root
-  void  write(TString name, TObject *obj, bool version_control = true); ///< write to file with name 'name'
+  void  write(TString name, TNamed *obj, bool version_control = true); ///< write to file with name 'name'
 
   TGraph *sumf(vector<TF1*> &fs); ///< TODO create TF1 which is sum of TF1s in fs;
 
-  TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
-  TF1 *fitgg(TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< fast double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
+  TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
+  TF1 *fitgg(TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
+  TF1 *fitng(Int_t n, TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1    *gg(TF1 *f, Int_t i); ///< get i'th gaussian from multipule gaussian function f1
 
   TH1D *cuty(TH1 *hist, Int_t bin1, Int_t bin2); ///< TODO
@@ -145,6 +155,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
    * @param nDivision division number through x
    * @param c fit will perform in range of -c*sigma ~ c*sigma
    * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
+   *
+   * the histograms are written to fSaveGFile is g(2) is used,
+   * fSaveGFile can be set by gfile(name) method.
    */
   TObjArray *fitgsx_list(TH1 *hist, Int_t nDivision=20, Double_t c=1.5, Int_t entry_cut=1000);
   /**
@@ -152,6 +165,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
    * @param nDivision division number through y
    * @param c fit will perform in range of -c*sigma ~ c*sigma
    * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
+   *
+   * the histograms are written to fSaveGFile is g(2) is used,
+   * fSaveGFile can be set by gfile(name) method.
    */
   TObjArray *fitgsy_list(TH1 *hist, Int_t nDivision=20, Double_t c=1.5, Int_t entry_cut=1000);
 
@@ -181,21 +197,67 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
    */
   TGraphErrors *fitgsy(TH1 *hist, Int_t nDivision=20, Double_t c=1.5, Int_t entry_cut=1000, bool error_graph = false);
 
-  TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< project from tree
-  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< project from tree
-  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins); ///< project from tree with bin made from array of xbins
+  TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< simple tree projection starting with tree, jumpto_tp0
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins); ///< simple tree projection starting with name using xbins for x-axis, jumpto_tp1
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1); ///< simple tree projection starting with name, jumpto_tp2
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut="",TString title="",int nx=-1,int ny=-1); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp3
+  /**
+   * tree projection from tree with cuts
+   * return array of histograms with applied cut
+   *
+   * cuts are used to create several histograms
+   * using global "g" verbose to
+   * - g(1) : draw histograms with applied cut
+   * - g(2) : draw histograms with applied cut and save in .png
+   *
+   * jumpto_tp4
+   */
+  TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,Double_t x1,Double_t x2,int ny=-1,Double_t y1=-1,Double_t y2=-1);
+  /**
+   * tree projection from tree with automatic bin range calculation with cuts
+   * return array of histograms with applied cut
+   *
+   * cuts are used to create several histograms
+   * using global "g" verbose to
+   * - g(1) : draw histograms with applied cut
+   * - g(2) : draw histograms with applied cut and save in .png
+   *
+   * jumpto_tp5
+   */
+  TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title="",int nx=-1,int ny=-1);
 
      Int_t max (Int_t *buffer, Int_t n); ///< get maximum value of buffer
   Double_t max (Double_t *buffer, Int_t n); ///< get maximum value of buffer
   Double_t max (TH1 *h); ///< get maximum value of histogram
   Double_t max (TH1 *h, Int_t &bin, Double_t &x); ///< get maximum value of histogram
-  Double_t fwrm(TF1 *f, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< width function at y; given by ratio*[maximum value] with quality q
-  Double_t fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q); ///< FWHM(Full Width Half Maximum)
-  Double_t fwhm(TF1 *f); ///< FWHM(Full Width Half Maximum)
 
-  Double_t fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< FWHM(Full Width Half Maximum) 
-  Double_t fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q); ///< Full Width Half Maximum
-  Double_t fwhm(TH1 *h); ///< Full Width Half Maximum
+  /**
+   * calculate and return full width [ratio] maximum of function
+   * the width is calculated at y which the data becomes [ratio] of maximum (=ratio*maximum)
+   *
+   * @param ratio width of function to be calculated at y=[ratio]*maximum 
+   * @param ndx   set number of x-points to be created. larger ndx -> better quality q
+   * @param x0    lower range value of x will be given
+   * @param x1    upper range value of x will be given
+   * @param q     quality of the fwrm
+   */
+  Double_t fwrm(TF1 *f, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q);
+  Double_t fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q); ///< FWHM(Full Width Half Maximum) of function. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
+  Double_t fwhm(TF1 *f); ///< FWHM(Full Width Half Maximum) with function. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
+
+  /**
+   * calculate and return full width [ratio] maximum of histogram
+   * the width is calculated at y which the data becomes [ratio] of maximum (=ratio*maximum)
+   *
+   * @param ratio width of histogram to be calculated at y=[ratio]*maximum 
+   * @param ndx   set number of x-points to be created. larger ndx -> better quality q
+   * @param x0    lower range value of x will be given
+   * @param x1    upper range value of x will be given
+   * @param q     quality of the fwrm
+   */
+  Double_t fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< full width [ratio] maximum : return width of histogram at y which the data becomes [ratio] of maximum (ratio*maximum)
+  Double_t fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q); ///< FWHM(Full Width Half Maximum) of histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
+  Double_t fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
 
   void pfname(TString str, TString &pathname, TString &filename, TString delim="/"); ///< get pathname=[path-name], filename=[file-name] after tonizing with delim
   TString firstname(TString str, TString delim="."); ///< get first name
@@ -204,15 +266,17 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
 
   /********************************************************/
 
-  void axisd(Int_t nd=506); ///< make axis ndivisions to nd!, (root default 510, style default 508, axisd default 506 - for TGraph2D)
+  void axisd(Int_t nd=506); ///< make axis ndivisions to nd!, (root default 510, style default 508, axisd default 506 for TGraph2D)
   TH1 *free (TH1 *h); ///< make axis labels feel free!
 
-  void cutt(); ///< cut top margin to 0.02
-  void cutr(Double_t r=0.02); ///< cut right margin to 0.02
-  void cuttr(Double_t r=0.02); ///< cut right margin to 0.02
-  void cutall(Double_t r=0.02); ///< cut all margin to 0.02
+  void cutt(Double_t r=0.04); ///< cut top margin to r=(0.04)
+  void cutr(Double_t r=0.02); ///< cut right margin to r=(0.02)
+  void cuttr(Double_t r=0.02); ///< cut right margin to r=(0.02)
+  void cutall(Double_t r=0.02); ///< cut all margin to r=(0.02)
 
-  void init();
+  /********************************************************/
+
+  void init(); ///< Initialize gStyle setting. Should NOT be run by users.
 
   /********************************************************/
 
@@ -220,6 +284,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
     bool fWrite=true;
      int fVerbose=1;
      int fVerboseG=0;
+     int fGbOption=0;
 
  TFile *fSaveGFile=nullptr;
 
@@ -241,10 +306,11 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
 
   double fWDefault=0.1;
   double fWUnit=0.008;
+  //double fWUnit=0.012;
   double fHUnit=0.05;
 
   double fWDefault2=0.2;
-  double fWUnit2=0.012;
+  double fWUnit2=0.010;
   double fHUnit2=0.07;
 
   double fWStat=0.25;
@@ -263,24 +329,34 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!
   double fAxisLabelSize=0.05;
   double fAxisTitleSize=0.06;
   double fAxisLabelSize2=0.07;
-  double fAxisTitleSize2=0.08;
+  double fAxisTitleSize2=0.09;
 
   double fXTitleOffset=1.15;
   double fYTitleOffset=1.35;
   double fXTitleOffset2=0.80;
-  //double fYTitleOffset2=1.30;
   double fYTitleOffset2=1.00;
+
+  int fDefaultFont=132;
 
   int fNDivisions=508;
   int fNDivisions2=506;
 
-  TObjArray *fArray;
+  TObjArray *fFileArray;
 }; 
+
+//============================
+  using namespace style;
+//============================
 
 void style::v(int verbose=1) { fVerbose=verbose; }
 void style::g(int verbose=1) { fVerboseG=verbose; }
+void style::o(int goption=1) { fGbOption=goption; }
 
 void style::gstat(int opt) {
+  gStyle->SetOptStat(opt);
+}
+
+void style::gstat(Option_t *opt) {
   gStyle->SetOptStat(opt);
 }
 
@@ -296,6 +372,7 @@ void style::zcolor(int opt) {
   else if(opt == 3) gStyle->SetPalette(kAvocado);
   else if(opt == 4) gStyle->SetPalette(kBlueGreenYellow);
   else if(opt == 5) gStyle->SetPalette(kBrownCyan);
+  else if(opt == 6) gStyle->SetPalette(kLightTemperature);
   else              gStyle->SetPalette(kGreyScale);
 }
 
@@ -528,7 +605,7 @@ Double_t style::fwhm(TH1 *h)
   return fwhm(h, x0, x1, q);
 }
 
-void style::cutt() { fTMargin = 0.04; }
+void style::cutt(Double_t r) { fTMargin = r; }
 void style::cutr(Double_t r) { fRMarginH1 = r; fRMarginH2 = r; }
 void style::cuttr(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
 void style::cutall(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
@@ -542,6 +619,9 @@ void style::init() {
   gStyle->SetStatX(fXStat);
   gStyle->SetStatY(fYStat);
   gStyle->SetTitleFontSize(fMainTitleSize);
+
+  gStyle -> SetLegendFont(fDefaultFont);
+  gStyle -> SetStatFont(fDefaultFont);
 }
 
 TCanvas *style::cv1(TString name,double w,double h,TString logs) {
@@ -551,7 +631,7 @@ TCanvas *style::cv1(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -562,7 +642,7 @@ TCanvas *style::cv2(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -573,7 +653,7 @@ TCanvas *style::cv3(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -584,7 +664,7 @@ TCanvas *style::cc3(TString name,double w,double h,TString logs) {
   if(h==0) h=fHCC2;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -595,7 +675,7 @@ TCanvas *style::cc4(TString name,double w,double h,TString logs) {
   if(h==0) h=fHCC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -606,7 +686,7 @@ TCanvas *style::cc1(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
@@ -617,30 +697,80 @@ TCanvas *style::cc2(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
-  make(cvs); ++fICvs;
+  make(cvs,logs); ++fICvs;
   return cvs;
 }
 
-TObject *style::make(TObject *o) {
-  if(o->InheritsFrom("TGraph"))  make((TGraph*)o);
-  if(o->InheritsFrom("TH1"))     make((TH1*)o);
-  if(o->InheritsFrom("TF1"))     make((TF1*)o);
-  if(o->InheritsFrom("TLegend")) make((TLegend*)o);
-  if(o->InheritsFrom("TCanvas")) make((TCanvas*)o);
-  return o;
+TCanvas *style::div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm,Float_t ym,Int_t color)
+{
+  c->Divide(nx,ny,xm,ym,color);
+  for (auto i=1; i<=nx*ny; ++i)
+    c->cd(i)->SetMargin(fLMargin,fRMargin,fBMargin,fTMargin);
+  return c;
 }
 
-TCanvas *style::make(TCanvas *cvs,TString logs) {
+TObject *style::make(TObject *ob) { //jumpto_makeo
+  if(ob->InheritsFrom("TGraph"))  make((TGraph*)ob);
+  if(ob->InheritsFrom("TH1"))     make((TH1*)ob);
+  if(ob->InheritsFrom("TF1"))     make((TF1*)ob);
+  if(ob->InheritsFrom("TLegend")) make((TLegend*)ob);
+  if(ob->InheritsFrom("TCanvas")) make((TCanvas*)ob);
+  return ob;
+}
+
+TCanvas *style::make(TCanvas *cvs,TString logs) { //jumpto_makec
+  cvs -> Modified();
+  cvs -> Update();
+
   cvs->SetMargin(fLMargin,fRMargin,fBMargin,fTMargin);
   logs.ToLower();
   if (logs.Index("x")>=0) cvs -> SetLogx();
   if (logs.Index("y")>=0) cvs -> SetLogy();
   if (logs.Index("z")>=0) cvs -> SetLogz();
-  //++fICvs;
+
+  auto pmtvs=cvs->GetListOfPrimitives();
+  if (pmtvs!=nullptr)
+  {
+    auto pvtt=(TPaveText*)pmtvs->FindObject("title");
+    if (pvtt!=nullptr) pvtt->SetTextFont(fDefaultFont);
+
+    TObject *obj2;
+    TIter next(pmtvs);
+    while ((obj2 = next())) {
+      if (obj2->InheritsFrom(TPad::Class())) {
+        auto innercvs=(TPad*)obj2;
+        innercvs -> Modified();
+        innercvs -> Update();
+        auto pmtvs2=innercvs->GetListOfPrimitives();
+        auto pvtt2=(TPaveText*)pmtvs2->FindObject("title");
+        if (pvtt2!=nullptr) pvtt2->SetTextFont(fDefaultFont);
+        innercvs -> Modified();
+        innercvs -> Update();
+
+        TObject *obj3;
+        TIter next2(pmtvs2);
+        while ((obj3 = next2())) {
+          if (obj3->InheritsFrom(TPad::Class())) {
+            auto innnercvs=(TPad*)obj3;
+            innnercvs -> Modified();
+            innnercvs -> Update();
+            auto pmtvs3=innnercvs->GetListOfPrimitives();
+            auto pvtt3=(TPaveText*)pmtvs3->FindObject("title");
+            if (pvtt3!=nullptr) pvtt3->SetTextFont(fDefaultFont);
+            innnercvs -> Modified();
+            innnercvs -> Update();
+          }
+        }
+      }
+    }
+  }
+
+  cvs -> Modified();
+  cvs -> Update();
   return cvs;
 }
 
-TGraph *style::make(TGraph *graph) {
+TGraph *style::make(TGraph *graph) { //jumpto_makeg
   init();
   if(graph->GetMarkerStyle()==1) {
     graph->SetMarkerStyle(20);
@@ -651,12 +781,12 @@ TGraph *style::make(TGraph *graph) {
   return graph;
 }
 
-TGraphErrors *style::make(TGraphErrors *graph)
+TGraphErrors *style::make(TGraphErrors *graph) //jumpto_makege
 {
   return (TGraphErrors *) make((TGraph *) graph);
 }
 
-TH1 *style::make2(TH1 *h) {
+TH1 *style::make2(TH1 *h) { //jumpto_makeh2
   init();
   h->GetXaxis()->CenterTitle();
   h->GetXaxis()->SetTitleOffset(fXTitleOffset2);
@@ -670,11 +800,19 @@ TH1 *style::make2(TH1 *h) {
   h->GetZaxis()->SetTitleOffset(fYTitleOffset2);
   h->GetZaxis()->SetTitleSize(fAxisTitleSize2);
   h->GetZaxis()->SetLabelSize(fAxisLabelSize2);
+
+  h->GetXaxis()->SetTitleFont(fDefaultFont);
+  h->GetYaxis()->SetTitleFont(fDefaultFont);
+  h->GetZaxis()->SetTitleFont(fDefaultFont);
+  h->GetXaxis()->SetLabelFont(fDefaultFont);
+  h->GetYaxis()->SetLabelFont(fDefaultFont);
+  h->GetZaxis()->SetLabelFont(fDefaultFont);
+
   free(h);
   return h;
 }
 
-TH1 *style::make(TH1 *h) {
+TH1 *style::make(TH1 *h) { //jumpto_makeh
   init();
   h->GetXaxis()->CenterTitle();
   h->GetXaxis()->SetTitleOffset(fXTitleOffset);
@@ -688,11 +826,19 @@ TH1 *style::make(TH1 *h) {
   h->GetZaxis()->SetTitleOffset(fYTitleOffset);
   h->GetZaxis()->SetTitleSize(fAxisTitleSize);
   h->GetZaxis()->SetLabelSize(fAxisLabelSize);
+
+  h->GetXaxis()->SetTitleFont(fDefaultFont);
+  h->GetYaxis()->SetTitleFont(fDefaultFont);
+  h->GetZaxis()->SetTitleFont(fDefaultFont);
+  h->GetXaxis()->SetLabelFont(fDefaultFont);
+  h->GetYaxis()->SetLabelFont(fDefaultFont);
+  h->GetZaxis()->SetLabelFont(fDefaultFont);
+
   free(h);
   return h;
 }
 
-TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) {
+TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -705,6 +851,7 @@ TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) {
   }
   
   auto y1=y2-legend->GetNRows()*fHUnit;
+  if (y1 < 0.5) y1 = 0.5;
   auto x2=1.-fRMargin;
   auto x1=x2-lmax*fWUnit - fWDefault;
   if(x1>x2-fWStat) x1=x2-fWStat;
@@ -716,10 +863,11 @@ TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) {
   legend->SetY2(y2+dy);
   legend->SetFillStyle(0);
   legend->SetBorderSize(0);
+  legend->SetTextFont(fDefaultFont);
   return legend;
 }
 
-TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) {
+TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel2
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -743,10 +891,11 @@ TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) {
   legend->SetY2(y2+dy);
   legend->SetFillStyle(0);
   legend->SetBorderSize(0);
+  legend->SetTextFont(fDefaultFont);
   return legend;
 }
 
-TPaveText *style::make(TPaveText *pave) {
+TPaveText *style::make(TPaveText *pave) { //jumpto_makep
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -770,10 +919,11 @@ TPaveText *style::make(TPaveText *pave) {
   pave->SetY2(y2);
   pave->SetFillStyle(0);
   pave->SetBorderSize(0);
+  pave->SetTextFont(fDefaultFont);
   return pave;
 }
 
-TF1 *style::make(TF1 *f) {
+TF1 *style::make(TF1 *f) { //jumpto_makef
   make(f->GetHistogram());
   f->SetNpx(1000);
   return f;
@@ -979,21 +1129,22 @@ void style::write(TObject *obj, bool version_control) {
   }
 }
 
-void style::write(TString name, TObject *obj, bool version_control = true){
+void style::write(TString name, TNamed *obj, bool version_control = true){
   if(!fWrite) return;
   TString path=TString(gSystem->Getenv("PWD"))+"/data/";
   gSystem->Exec(TString("mkdir -p ")+path);
+  obj -> SetName(name);
   TString full_name=name+".root";
   if(!fVersion.IsNull())
     name=name+"."+fVersion;
 
-  if(fArray == nullptr)
-    fArray = new TObjArray();
+  if(fFileArray == nullptr)
+    fFileArray = new TObjArray();
 
   TFile *file = nullptr;
-  for (auto i=0; i<fArray->GetEntries(); ++i)
+  for (auto i=0; i<fFileArray->GetEntries(); ++i)
   {
-    auto file0 = (TFile *) fArray->At(i);
+    auto file0 = (TFile *) fFileArray->At(i);
     if(TString(file0->GetName()).Index(name)>0) {
       file = file0;
       break;
@@ -1009,7 +1160,7 @@ void style::write(TString name, TObject *obj, bool version_control = true){
     if(!fVersion.IsNull()) {
       full_name=name+".root";
       file = new TFile(path+full_name,"recreate");
-      fArray->Add(file);
+      fFileArray->Add(file);
       obj->Write();
       if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
       return;
@@ -1019,7 +1170,7 @@ void style::write(TString name, TObject *obj, bool version_control = true){
       char* c=gSystem->Which(path.Data(),full_name.Data());
       if(TString(c).IsNull()) {
         file = new TFile(path+full_name,"recreate");
-        fArray->Add(file);
+        fFileArray->Add(file);
         obj->Write();
         if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
         return;
@@ -1032,6 +1183,10 @@ void style::write(TString name, TObject *obj, bool version_control = true){
 
 
 TF1 *style::fitg(TH1 *h,Double_t c,Option_t *opt) {
+  if(fVerbose>1) {
+    if(!TString(opt).IsNull()) cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
+    else                       cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
+  }
   auto binmax=h->GetMaximumBin();
   auto max=h->GetBinContent(binmax);
   auto xmax=h->GetXaxis()->GetBinCenter(binmax);
@@ -1039,11 +1194,21 @@ TF1 *style::fitg(TH1 *h,Double_t c,Option_t *opt) {
   auto f=new TF1(Form("%s_fitg",h->GetName()),"gaus(0)",xmax-xerr*c,xmax+xerr*c);
   f->SetParameters(max,xmax,xerr);
   h->Fit(f,opt);
-
   xmax=f->GetParameter(1);
   xerr=f->GetParameter(2);
-  f->SetRange(xmax-c*xerr,xmax+c*xerr);
-  h->Fit(f,opt);
+
+  Int_t fitcount = 1;
+  Double_t xerr2 = 0.;
+  while (fitcount<10&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
+    xerr2=xerr;
+    f->SetRange(xmax-c*xerr2,xmax+c*xerr2);
+    h->Fit(f,opt);
+    xmax=f->GetParameter(1);
+    xerr=f->GetParameter(2);
+    ++fitcount;
+  }
+
+  if(fVerbose>1)cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<endl;
   return f;
 }
 
@@ -1056,6 +1221,139 @@ TF1 *style::fitgg(TH1 *h,Double_t c,Option_t *opt) {
   auto f=new TF1("f1","gaus(0)+gaus(3)",xmax-xerr*c,xmax+xerr*c);
   f->SetParameters(0.8*max,xmax,0.5*xerr,0.2*max,xmax,1.5*xerr);
   h->Fit(f,opt);
+
+  auto xmax1=f->GetParameter(1);
+  auto xmax2=f->GetParameter(4);
+  xmax=.5*(xmax1+xmax2);
+  auto dxmax=abs(xmax1-xmax2);
+
+  auto xerr1=f->GetParameter(2);
+  auto xerr2=f->GetParameter(5);
+  xerr=(xerr1>xerr2)?xerr1:xerr2;
+
+  Int_t fitcount = 1;
+  Double_t pxerr1 = 0.;
+  Double_t pxerr2 = 0.;
+  while (fitcount<10&&TMath::Abs(xerr2-pxerr1)/xerr2>0.2&&TMath::Abs(xerr2-pxerr2)/xerr2>0.2) {
+    pxerr1=xerr1;
+    pxerr2=xerr2;
+    xerr=(xerr1>xerr2)?xerr1:xerr2;
+    f->SetRange(xmax-.5*dxmax-c*xerr,xmax+.5*dxmax+c*xerr);
+    h->Fit(f,opt);
+    xmax1=f->GetParameter(1);
+    xmax2=f->GetParameter(4);
+    xmax=.5*(xmax1+xmax2);
+    dxmax=abs(xmax1-xmax2);
+    xerr1=f->GetParameter(2);
+    xerr2=f->GetParameter(5);
+    ++fitcount;
+  }
+
+  if(fVerbose>1) {
+    cout<<"fitgg num-iteration:"<<fitcount<<endl;
+    cout<<" [1 a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"]"<< endl;
+    cout<<" [2 a:"<<f->GetParameter(3)<<", m:"<<f->GetParameter(4)<<", s:"<<f->GetParameter(5)<<"]"<< endl;
+  }
+
+  f->SetLineColor(kBlack);
+
+  return f;
+}
+
+TF1 *style::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
+  if (n<1) return nullptr;
+  else if (n==1) return fitg(h,c,opt);
+  else if (n==2) return fitgg(h,c,opt);
+
+  auto binmax=h->GetMaximumBin();
+  auto max=h->GetBinContent(binmax);
+  auto xmax0=h->GetXaxis()->GetBinCenter(binmax);
+  auto xerr0=h->GetStdDev();
+
+  TString expression;
+  for (auto i=0; i<n; ++i) {
+    if (i==0)
+      expression += "gaus(0)";
+    else
+      expression += Form("+gaus(%d)",i*3);
+  }
+
+  auto f=new TF1(Form("f%dgaus",n),expression,xmax0-xerr0*c,xmax0+xerr0*c);
+
+  for (auto i=0; i<n; ++i) {
+    f->SetParameter(i*3+0, (1./n)*max);
+    f->SetParameter(i*3+1, xmax0);
+    f->SetParameter(i*3+2, .5*xerr0);
+  }
+  h->Fit(f,opt);
+
+  vector<double> xmax;
+  vector<double> xerr;
+  vector<double> pxerr;
+
+  for (auto i=0; i<n; ++i) {
+    xmax.push_back(f->GetParameter(i*3+1));
+    xerr.push_back(f->GetParameter(i*3+2));
+    pxerr.push_back(0);
+  }
+
+  Int_t fitcount = 1;
+  while (fitcount<10)
+  {
+    bool good_to_break = true;
+    for (auto i=0; i<n; ++i) {
+      if (TMath::Abs(xerr[i]-pxerr[i])/xerr[i]>0.2) {
+        good_to_break = false;
+        break;
+      }
+    }
+    if (good_to_break)
+      break;
+
+    for (auto i=0; i<n; ++i)
+      pxerr[i]=xerr[i];
+
+    auto xerr_range=xerr[0];
+    for (auto i=0; i<n; ++i)
+      if (xerr_range<xerr[i])
+        xerr_range=xerr[i];
+
+    auto xmax_mean = 0;
+    auto dxmax = 0;
+    auto count = 0;
+    for (auto i=0; i<n; ++i) {
+      xmax_mean += xmax[i];
+      for (auto j=0; j<n; ++j) {
+        if (i==j || i>j)
+          continue;
+        dxmax += abs(xmax[i]-xmax[j]);
+        ++count;
+      }
+    }
+    xmax_mean = xmax_mean/n;
+    dxmax = dxmax/count;
+
+    f->SetRange(xmax_mean-.5*dxmax-c*xerr_range,xmax_mean+.5*dxmax+c*xerr_range);
+    h->Fit(f,opt);
+
+    xmax.clear();
+    xerr.clear();
+    for (auto i=0; i<n; ++i) {
+      xmax.push_back(f->GetParameter(i*3+1));
+      xerr.push_back(f->GetParameter(i*3+2));
+    }
+
+    ++fitcount;
+  }
+
+  if(fVerbose>1) {
+    cout<<"fit"<<n<<"g num-iteration:"<<fitcount<<endl;
+    for (auto i=0; i<n; ++i)
+      cout<<" ["<<i<<" a:"<<f->GetParameter(i*3+0)<<", m:"<<f->GetParameter(i*3+1)<<", s:"<<f->GetParameter(i*3+2)<<"]"<< endl;
+  }
+
+  f->SetLineColor(kBlack);
+
   return f;
 }
 
@@ -1064,6 +1362,13 @@ TF1 *style::gg(TF1 *f1, Int_t i) {
   f1->GetRange(min,max);
   auto f=new TF1(Form("%s_%d",f1->GetName(),i),"gaus(0)",min,max);
   f->SetParameters(f1->GetParameter(3*i),f1->GetParameter(3*i+1),f1->GetParameter(3*i+2));
+  if(i==0) f->SetLineColor(kRed);
+  else if(i==1) f->SetLineColor(kBlue);
+  else if(i==2) f->SetLineColor(kGreen+1);
+  else if(i==3) f->SetLineColor(kOrange+2);
+  else if(i==4) f->SetLineColor(kCyan+2);
+  else
+    f->SetLineColor(kGray);
   return f;
 }
 
@@ -1223,23 +1528,114 @@ TGraphErrors *style::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, TStr
   return make(graph);
 }
 
-TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) {
-  if(fVerbose>0)cout<<name<<": "<<tree->GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]->";
+TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp4
+  int count=0;
+  auto histograms = new TObjArray();
+  for (TCut cut : cuts) {
+    TString cname = cut.GetName();
+    if(cname.IsNull()||cname=="CUT") cname = name+"_"+TString::Itoa(count, 10);
+    else                             cname = name+"_"+cname;
+    if(formula.Index(":")>=0) {
+      auto hist=tp(tree,formula,cut,cname,title,nx,x1,x2,ny,y1,y2);
+      histograms->Add(hist);
+      if(fGbOption>0) {
+        auto cvs=cc(cname);
+        make(hist)->Draw("colz");
+        if(fGbOption>1)
+          save(cvs,"png");
+      }
+    }
+    else {
+      auto hist=tp(tree,formula,cut,cname,title,nx,x1,x2,-1,-1,-1);
+      histograms->Add(hist);
+      if(fGbOption>0) {
+        auto cvs=cv(cname);
+        make(hist)->Draw();
+        if(fGbOption>1)
+          save(cvs,"png");
+      }
+    }
+    ++count;
+  }
+  return histograms;
+}
+
+TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,int ny) { //jumpto_tp5
+  if(nx==-1)nx=200;
+  if(ny==-1)ny=200;
+  if(formula.Index(":")>=0) return tp(name,tree,formula,cuts,title,nx,0,0,ny,-1,-1);
+  else                      return tp(name,tree,formula,cuts,title,nx,0,0,-1,-1,-1);
+}
+
+TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,int ny) { //jumpto_tp3
+  if(nx==-1)nx=200;
+  if(ny==-1)ny=200;
+  if(formula.Index(":")>=0) return tp(tree,formula,cut,name,title,nx,0,0,ny,-1,-1);
+  else                      return tp(tree,formula,cut,name,title,nx,0,0,-1,-1,-1);
+}
+
+TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp0
+  if(fVerbose>0) {
+    if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+    else                       cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
+  }
   TH1 *h;
-  if(ny<0) h=new TH1D(name,title,nx,x1,x2);
-  else     h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
+  if(x1==0&&x2==0) {
+    if(formula.Index(":")>=0){
+      TObjArray *tokens = formula.Tokenize(":");
+      TString bnamex=((TObjString *)tokens->At(1))->GetString();
+      TString bnamey=((TObjString *)tokens->At(0))->GetString();
+      x1=tree->GetMinimum(bnamex);
+      x2=tree->GetMaximum(bnamex);
+      auto x3=(x2-x1)/10.;
+      x2=x2+x3;
+      x1=x1-x3;
+      y1=tree->GetMinimum(bnamey);
+      y2=tree->GetMaximum(bnamey);
+      auto y3=(y2-y1)/10.;
+      y2=y2+y3;
+      y1=y1-y3;
+      if(title.IsNull()) title=name+";"+bnamex+";"+bnamey;
+      h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
+    }
+    else {
+      x1=tree->GetMinimum(formula);
+      x2=tree->GetMaximum(formula);
+      auto x3=(x2-x1)/10.;
+      x2=x2+x3;
+      x1=x1-x3;
+      if(title.IsNull()) title=name+";"+formula;
+      h=new TH1D(name,title,nx,x1,x2);
+    }
+  }
+  else {
+    if(ny<0) {
+      if(title.IsNull()) title=name+";"+formula;
+      h=new TH1D(name,title,nx,x1,x2);
+    }
+    else {
+      TObjArray *tokens = formula.Tokenize(":");
+      TString bnamex=((TObjString *)tokens->At(1))->GetString();
+      TString bnamey=((TObjString *)tokens->At(0))->GetString();
+      if(title.IsNull()) title=name+";"+bnamex+";"+bnamey;
+      h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
+    }
+  }
   auto n=tree->Project(name,formula,cut);
   if(fVerbose>0)cout<<n<<endl;
   return make(h);
 };
 
-TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) {
+TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp2
   return tp(tree,formula,cut,name,title,nx,x1,x2,ny,y1,y2);
 };
 
-TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins)
+TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins) //jumpto_tp1
 {
-  if(fVerbose>0)cout<<name<<": "<<tree->GetName()<<"->[formula:"<<formula<<"],[cut:"<<TString(cut)<<"]->";
+  if(fVerbose>0) {
+    if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+    else                       cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
+  }
   TH1 *h=new TH1D(name,title,nx,xbins);
   auto n=tree->Project(name,formula,cut);
   if(fVerbose>0)cout<<n<<endl;
