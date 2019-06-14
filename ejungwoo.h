@@ -1,10 +1,15 @@
-/** ROOT plot style sheet
+/** ROOT ejungwoo macros
  *
  * - HOW TO USE
  *
- * #include "style.h"
- * using namespace style;
+ * #include "ejungwoo.h"
+ * using namespace ejungwoo;
  */
+
+#include <vector>
+#include <iostream>
+#include <fstream>
+using namespace std;
 
 #include "TF1.h"
 #include "TH1.h"
@@ -23,21 +28,18 @@
 #include "TLegendEntry.h"
 #include "TObjArray.h"
 #include "TObjString.h"
-#include <vector>
-#include <iostream>
 
-using namespace std;
-
-/**
- * simple list of functions
- */
-namespace style
+namespace ejungwoo
 {
   void v(int verbose=1); ///< verbosity "fVerbose" - 0:silent, 1:default
   void g(int graphic=1); ///< graphic verbosity "fVerboseG" - 0:silent(default), 1:draw-details
   void o(int goption=1);
 
+  void dark(bool dm = true); ///< dark mode
+
   TFile *gfile(TString filename); ///< save graphic if fVerboseG>1
+
+  bool isfile(TString filename); ///< does this file exist?
 
   void gstat (int opt); ///< equalivant to gStyle->SetOptStat(opt);
   void gstat (Option_t *opt);
@@ -46,6 +48,9 @@ namespace style
 
   void colorwheel(); ///< show colorwheel
   void markers();    ///< show markers
+  void colorlist();
+
+  Color_t colori(Int_t icolor);
 
   TCanvas *cv1 (TString nm="",double w=0,double h=0,TString l=""); ///<  500 x 550 for 1D
   TCanvas *cv2 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 1D
@@ -67,14 +72,17 @@ namespace style
   TCanvas *cc4 (TString l,TString nm,double w=0,double h=0) { return cc4 (nm,w,h,l); } ///< cc4 equavalent with log option as 1'st parameter
   TCanvas *cc  (TString l,TString nm,double w=0,double h=0) { return cc  (nm,w,h,l); } ///< cc  equavalent with log option as 1'st parameter
 
-  TCanvas *div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm=0.001,Float_t ym=0.001,Int_t color=0);
+  TCanvas *div (TCanvas *c,Int_t nx,Int_t ny,Float_t xm=0.001,Float_t ym=0.001,Int_t color=0); ///< Divide canvas
+  TCanvas *div0(TCanvas *c,Int_t nx,Int_t ny); ///< Divide canvas with no margins no gaps
 
      TObject *make (TObject *ob);      ///< make object stylish!,            jumpto_makeo
       TGraph *make (TGraph *gr);       ///< make graph stylish!,             jumpto_makeg
 TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jumpto_makege
+         TF1 *make (TF1 *f);           ///< make function stylish!,          jumpto_makef
+
+         TH1 *make (Int_t s, TH1 *h);  ///< make histogram stylish! (s)bigger!, jumpto_maken
          TH1 *make (TH1 *h);           ///< make histogram stylish!,         jumpto_makeh
          TH1 *make2(TH1 *h);           ///< make histogram stylish! bigger!, jumpto_makeh2
-         TF1 *make (TF1 *f);           ///< make function stylish!,          jumpto_makef
 
    TPaveText *make (TPaveText *pave);            ///< make pave text stylish!, jumpto_makep
      TCanvas *make (TCanvas *cvs, TString l=""); ///< make canvas stylish!,    jumpto_makec
@@ -85,11 +93,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   TF1 *settitle(TF1 *f, TString title); ///< set title of function histogram
 
   TH1 *tohist(Double_t *buffer, Int_t n, TString name = "", TString title = ""); ///< make histogram with given buffer
-  TH1 *tohist(Double_t *buffer, Int_t i, Int_t f, TString name = "", TString title = ""); ///< make histogram with given buffer
+  TH1 *tohist(Double_t *buffer, Int_t i, Int_t f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
 
-  //TGraph *tograph(TString filename);
-
-  TH1 *inv (TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
+  TGraphErrors *tograph(TString filename);
 
   TCutG *cutg (TString f, TString cutname, TString x, TString y); ///< set TCutG from file name
   TCutG *cutg (TFile  *f, TString cutname, TString x, TString y); ///< set TCutG from file
@@ -98,6 +104,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   TH1   *cutg_or (TH1 *h, TCutG *cut, TCutG *orcut);
   TH1   *cutg_and(TH1 *h, TCutG *cut, TCutG *andcut);
 
+  TH1 *inv(TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
   TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, Double_t maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
   TH1 *norm_integral(TH1 *h, Double_t normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
@@ -105,10 +112,12 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   void version(TString v); ///< if version is set, fVersion is used instead of doing verson control.
   TString version(); ///< return version
 
+  void fig(TString name);
+
   void fsave(bool val); ///< set save canvas by save(TCanvas *)
-  void  save(TVirtualPad *cvs, TString format="png", bool version_control = true); ///< save TVirtualPad. See as save(TCanvas *) for detail
-  void  save(TCanvas *cvs, TString format="png", bool version_control = true); ///< save cavans ./figures/[canvas name].[version-automatically updated].[format]
-  void  save(TString name, TCanvas *cvs, TString format="png", bool version_control = true); ///< save cavans ./figures/[name].[version-automatically updated].[format]
+  void  save(TVirtualPad *cvs, TString format="pdf", bool version_control = true); ///< save TVirtualPad. See as save(TCanvas *) for detail
+  void  save(TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures/[canvas name].[version-automatically updated].[format]
+  void  save(TString name, TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures/[name].[version-automatically updated].[format]
 
   void fwrite(bool val); ///< set write object by write(TObject *)
   void  write(TObject *obj, bool version_control = true); ///< write object ./data/[obj name].[version-automatically updated].root
@@ -120,6 +129,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   TF1 *fitgg(TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitng(Int_t n, TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1    *gg(TF1 *f, Int_t i); ///< get i'th gaussian from multipule gaussian function f1
+
+  void drawgg(TF1 *f, Option_t *opt="samel"); ///< Draw n-gaussian separately
 
   TH1D *cuty(TH1 *hist, Int_t bin1, Int_t bin2); ///< TODO
   TH1D *cuty(TH1 *hist, Int_t bin1, Int_t bin2, TGraph *cut_area); ///< TODO
@@ -208,7 +219,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
    * cuts are used to create several histograms
    * using global "g" verbose to
    * - g(1) : draw histograms with applied cut
-   * - g(2) : draw histograms with applied cut and save in .png
+   * - g(2) : draw histograms with applied cut and save in .pdf
    *
    * jumpto_tp4
    */
@@ -220,7 +231,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
    * cuts are used to create several histograms
    * using global "g" verbose to
    * - g(1) : draw histograms with applied cut
-   * - g(2) : draw histograms with applied cut and save in .png
+   * - g(2) : draw histograms with applied cut and save in .pdf
    *
    * jumpto_tp5
    */
@@ -266,7 +277,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
 
   /********************************************************/
 
-  void axisd(Int_t nd=506); ///< make axis ndivisions to nd!, (root default 510, style default 508, axisd default 506 for TGraph2D)
+  void axisd(Int_t nd=506); ///< make axis ndivisions to nd!, (root default 510, default 508, axisd default 506 for TGraph2D)
   TH1 *free (TH1 *h); ///< make axis labels feel free!
 
   void cutt(Double_t r=0.04); ///< cut top margin to r=(0.04)
@@ -286,9 +297,25 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
      int fVerboseG=0;
      int fGbOption=0;
 
+    bool fDarkMode=false;
+
+     int fNumColors=27;
+
+ Color_t fColorList[] = {
+   kBlue-4,   kBlue,     kBlue+1,   kAzure+7,
+   kRed-4,    kRed,      kRed+1,
+   kPink-2,   kPink+7,   kPink+3,
+   kSpring+7, kSpring-5, kSpring-6,
+   kCyan+1,   kCyan+2,   kCyan+3,
+   kYellow,
+   kOrange,   kOrange-3, kOrange+8, kOrange+6, kOrange-4, 
+   kTeal+5,   kTeal+3,
+   kViolet-5, kViolet-6, kViolet+4};
+
  TFile *fSaveGFile=nullptr;
 
  TString fVersion="";
+ TString fFigDirName="figures";
 
      int fICvs=0;
      int fIHist=0;
@@ -326,15 +353,10 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   double fRMarginH2=0.155;
 
   double fMainTitleSize=0.08;
-  double fAxisLabelSize=0.05;
-  double fAxisTitleSize=0.06;
-  double fAxisLabelSize2=0.07;
-  double fAxisTitleSize2=0.09;
-
-  double fXTitleOffset=1.15;
-  double fYTitleOffset=1.35;
-  double fXTitleOffset2=0.80;
-  double fYTitleOffset2=1.00;
+  double fAxisTitleSizes[]={0.05,0.065,0.09,0.11};
+  double fAxisLabelSizes[]={0.05,0.06 ,0.07,0.09};
+  double fXTitleOffsets[]= {1.25,1.10, 0.80,0.80};
+  double fYTitleOffsets[]= {1.80,1.20, 1.10,1.00};
 
   int fDefaultFont=132;
 
@@ -344,27 +366,26 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   TObjArray *fFileArray;
 }; 
 
-//============================
-  using namespace style;
-//============================
 
-void style::v(int verbose=1) { fVerbose=verbose; }
-void style::g(int verbose=1) { fVerboseG=verbose; }
-void style::o(int goption=1) { fGbOption=goption; }
+void ejungwoo::v(int verbose=1) { fVerbose=verbose; }
+void ejungwoo::g(int verbose=1) { fVerboseG=verbose; }
+void ejungwoo::o(int goption=1) { fGbOption=goption; }
 
-void style::gstat(int opt) {
+void ejungwoo::dark(bool dm = true) { fDarkMode = dm; }
+
+void ejungwoo::gstat(int opt) {
   gStyle->SetOptStat(opt);
 }
 
-void style::gstat(Option_t *opt) {
+void ejungwoo::gstat(Option_t *opt) {
   gStyle->SetOptStat(opt);
 }
 
-void style::fstat(int opt) {
+void ejungwoo::fstat(int opt) {
   gStyle->SetOptFit(opt);
 }
 
-void style::zcolor(int opt) {
+void ejungwoo::zcolor(int opt) {
   if(fVerbose>0) cout<<"zcolor("<<opt<<") >> 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale"<<endl;
        if(opt == 0) gStyle->SetPalette(kBird);
   else if(opt == 1) gStyle->SetPalette(kRainBow);
@@ -376,13 +397,13 @@ void style::zcolor(int opt) {
   else              gStyle->SetPalette(kGreyScale);
 }
 
-void style::colorwheel() {
+void ejungwoo::colorwheel() {
   TColorWheel *w=new TColorWheel();
   w->SetCanvas(cv("cw",700,700));
   w->Draw();
 }
 
-void style::markers() {
+void ejungwoo::markers() {
   gStyle -> SetOptStat(0);
   auto cvs = new TCanvas("markers","",600,400);
   cvs->SetMargin(0.02,0.02,0.02,0.02);
@@ -415,7 +436,42 @@ void style::markers() {
   }
 }
 
-TGraph *style::sumf(vector<TF1*> &fs)
+void ejungwoo::colorlist() {
+  gStyle -> SetOptStat(0);
+  auto cvs = new TCanvas("markers","",600,400);
+  cvs->SetMargin(0.02,0.02,0.02,0.02);
+  auto hist = new TH2D("hist","",100,0.2,10.8,100,0.1,5.6);
+  hist->SetStats(0);
+  hist->GetXaxis()->SetLabelOffset(100);
+  hist->GetYaxis()->SetLabelOffset(100);
+  hist->GetXaxis()->SetNdivisions(0);
+  hist->GetYaxis()->SetNdivisions(0);
+  hist->Draw();
+  int i=0;
+  for (auto y=5; y>=1; --y) {
+    for (auto x=1; x<=10; ++x) {
+      auto m = new TMarker(x,y,20);
+      m -> SetMarkerSize(3.5);
+      m -> SetMarkerColor(colori(i));
+      auto t = new TText(x,y-0.42,Form("%d",i));
+      t -> SetTextSize(0.035);
+      t -> SetTextAlign(22);
+      m -> Draw();
+      t -> Draw();
+      i++;
+      if (i>=fNumColors)
+        return;
+    }
+  }
+}
+
+Color_t ejungwoo::colori(Int_t icolor)
+{
+  icolor = icolor - fNumColors*(icolor/fNumColors);
+  return fColorList[icolor];
+}
+
+TGraph *ejungwoo::sumf(vector<TF1*> &fs)
 {
   auto graph=new TGraph();
   Double_t x,xl,xh;
@@ -432,7 +488,7 @@ TGraph *style::sumf(vector<TF1*> &fs)
   return graph;
 }
 
-Int_t style::max(Int_t *buffer, Int_t n)
+Int_t ejungwoo::max(Int_t *buffer, Int_t n)
 {
   Int_t val = -INT_MAX;
   for (auto i=0; i<n; ++i)
@@ -441,7 +497,7 @@ Int_t style::max(Int_t *buffer, Int_t n)
   return val;
 }
 
-Double_t style::max(Double_t *buffer, Int_t n)
+Double_t ejungwoo::max(Double_t *buffer, Int_t n)
 {
   Double_t val = -DBL_MAX;
   for (auto i=0; i<n; ++i)
@@ -450,19 +506,19 @@ Double_t style::max(Double_t *buffer, Int_t n)
   return val;
 }
 
-Double_t style::max(TH1 *h) {
+Double_t ejungwoo::max(TH1 *h) {
   Int_t bin;
   Double_t x;
   return max(h, bin, x);
 }
 
-Double_t style::max (TH1 *h, Int_t &bin, Double_t &x) {
+Double_t ejungwoo::max (TH1 *h, Int_t &bin, Double_t &x) {
   bin=h->GetMaximumBin();
   x=h->GetXaxis()->GetBinCenter(bin);
   return h->GetBinContent(bin);
 }
 
-Double_t style::fwrm(TF1 *f, Double_t ratio, Double_t nx, Double_t &x0, Double_t &x1, Double_t &q)
+Double_t ejungwoo::fwrm(TF1 *f, Double_t ratio, Double_t nx, Double_t &x0, Double_t &x1, Double_t &q)
 {
   Double_t x, xl, xh;
   f->GetRange(xl, xh);
@@ -521,18 +577,18 @@ Double_t style::fwrm(TF1 *f, Double_t ratio, Double_t nx, Double_t &x0, Double_t
   return x1-x0;
 }
 
-Double_t style::fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q)
+Double_t ejungwoo::fwhm(TF1 *f, Double_t &x0, Double_t &x1, Double_t &q)
 {
   return fwrm(f, 0.5, 10000, x0, x1, q);
 }
 
-Double_t style::fwhm(TF1 *f)
+Double_t ejungwoo::fwhm(TF1 *f)
 {
   Double_t x0, x1 ,q;
   return fwhm(f, x0, x1, q);
 }
 
-Double_t style::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q)
+Double_t ejungwoo::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q)
 {
   if(fVerbose>0) cout<<"assuming histogram "<<h->GetName()<<" is smooth"<<endl;
 
@@ -594,23 +650,23 @@ Double_t style::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_
   return x1-x0;
 }
 
-Double_t style::fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q)
+Double_t ejungwoo::fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q)
 {
   return fwrm(h, 0.5, 0.1, x0, x1, q);
 }
 
-Double_t style::fwhm(TH1 *h)
+Double_t ejungwoo::fwhm(TH1 *h)
 {
   Double_t x0, x1 ,q;
   return fwhm(h, x0, x1, q);
 }
 
-void style::cutt(Double_t r) { fTMargin = r; }
-void style::cutr(Double_t r) { fRMarginH1 = r; fRMarginH2 = r; }
-void style::cuttr(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
-void style::cutall(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
+void ejungwoo::cutt(Double_t r) { fTMargin = r; }
+void ejungwoo::cutr(Double_t r) { fRMarginH1 = r; fRMarginH2 = r; }
+void ejungwoo::cuttr(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
+void ejungwoo::cutall(Double_t r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
 
-void style::init() {
+void ejungwoo::init() {
   fXStat=1.-fRMargin;
   fYStat=1.-fTMargin;
   gStyle->SetStatStyle(0);
@@ -624,7 +680,7 @@ void style::init() {
   gStyle -> SetStatFont(fDefaultFont);
 }
 
-TCanvas *style::cv1(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cv1(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC1;
@@ -635,7 +691,7 @@ TCanvas *style::cv1(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cv2(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cv2(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC2;
@@ -646,7 +702,7 @@ TCanvas *style::cv2(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cv3(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cv3(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH1;
   init();
   if(w==0) w=fWC3;
@@ -657,7 +713,7 @@ TCanvas *style::cv3(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cc3(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cc3(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWCC2;
@@ -668,7 +724,7 @@ TCanvas *style::cc3(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cc4(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cc4(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWCC3;
@@ -679,7 +735,7 @@ TCanvas *style::cc4(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cc1(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cc1(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWC2;
@@ -690,7 +746,7 @@ TCanvas *style::cc1(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::cc2(TString name,double w,double h,TString logs) {
+TCanvas *ejungwoo::cc2(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
   if(w==0) w=fWC3;
@@ -701,7 +757,7 @@ TCanvas *style::cc2(TString name,double w,double h,TString logs) {
   return cvs;
 }
 
-TCanvas *style::div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm,Float_t ym,Int_t color)
+TCanvas *ejungwoo::div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm,Float_t ym,Int_t color)
 {
   c->Divide(nx,ny,xm,ym,color);
   for (auto i=1; i<=nx*ny; ++i)
@@ -709,7 +765,37 @@ TCanvas *style::div(TCanvas *c,Int_t nx,Int_t ny,Float_t xm,Float_t ym,Int_t col
   return c;
 }
 
-TObject *style::make(TObject *ob) { //jumpto_makeo
+TCanvas *ejungwoo::div0(TCanvas *c,Int_t nx,Int_t ny)
+{
+  // TODO
+  c->Divide(nx,ny,0,0);
+  for (auto ix=1; ix<=nx; ++ix) {
+    for (auto iy=1; iy<=ny; ++iy) {
+      auto i = ix + nx*(iy-1);
+      if (iy==1&&iy==ny) {
+             if (ix==1)  c->cd(i)->SetMargin(fLMargin,       0,fBMargin,fTMargin);
+        else if (ix==nx) c->cd(i)->SetMargin(       0,fRMargin,fBMargin,fTMargin);
+        else             c->cd(i)->SetMargin(       0,       0,fBMargin,fTMargin);
+      }
+      else if (iy==1) {
+        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,0,fTMargin);
+        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,0,fTMargin);
+        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,0,fTMargin);
+        else               c->cd(i)->SetMargin(       0,       0,0,fTMargin);
+      }
+      else if (iy==ny) {
+        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,fBMargin,0);
+        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,fBMargin,0);
+        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,fBMargin,0);
+        else               c->cd(i)->SetMargin(       0,       0,fBMargin,0);
+      }
+      else c->cd(i)->SetMargin(fLMargin,fRMargin,fBMargin,fTMargin);
+    }
+  }
+  return c;
+}
+
+TObject *ejungwoo::make(TObject *ob) { //jumpto_makeo
   if(ob->InheritsFrom("TGraph"))  make((TGraph*)ob);
   if(ob->InheritsFrom("TH1"))     make((TH1*)ob);
   if(ob->InheritsFrom("TF1"))     make((TF1*)ob);
@@ -718,9 +804,11 @@ TObject *style::make(TObject *ob) { //jumpto_makeo
   return ob;
 }
 
-TCanvas *style::make(TCanvas *cvs,TString logs) { //jumpto_makec
+TCanvas *ejungwoo::make(TCanvas *cvs,TString logs) { //jumpto_makec
   cvs -> Modified();
   cvs -> Update();
+
+  if (fDarkMode) cvs -> SetFillColor(kGray);
 
   cvs->SetMargin(fLMargin,fRMargin,fBMargin,fTMargin);
   logs.ToLower();
@@ -739,6 +827,7 @@ TCanvas *style::make(TCanvas *cvs,TString logs) { //jumpto_makec
     while ((obj2 = next())) {
       if (obj2->InheritsFrom(TPad::Class())) {
         auto innercvs=(TPad*)obj2;
+        if (fDarkMode) innercvs -> SetFillColor(kGray);
         innercvs -> Modified();
         innercvs -> Update();
         auto pmtvs2=innercvs->GetListOfPrimitives();
@@ -752,6 +841,7 @@ TCanvas *style::make(TCanvas *cvs,TString logs) { //jumpto_makec
         while ((obj3 = next2())) {
           if (obj3->InheritsFrom(TPad::Class())) {
             auto innnercvs=(TPad*)obj3;
+            if (fDarkMode) innnercvs -> SetFillColor(kGray);
             innnercvs -> Modified();
             innnercvs -> Update();
             auto pmtvs3=innnercvs->GetListOfPrimitives();
@@ -770,7 +860,7 @@ TCanvas *style::make(TCanvas *cvs,TString logs) { //jumpto_makec
   return cvs;
 }
 
-TGraph *style::make(TGraph *graph) { //jumpto_makeg
+TGraph *ejungwoo::make(TGraph *graph) { //jumpto_makeg
   init();
   if(graph->GetMarkerStyle()==1) {
     graph->SetMarkerStyle(20);
@@ -781,25 +871,25 @@ TGraph *style::make(TGraph *graph) { //jumpto_makeg
   return graph;
 }
 
-TGraphErrors *style::make(TGraphErrors *graph) //jumpto_makege
+TGraphErrors *ejungwoo::make(TGraphErrors *graph) //jumpto_makege
 {
   return (TGraphErrors *) make((TGraph *) graph);
 }
 
-TH1 *style::make2(TH1 *h) { //jumpto_makeh2
+TH1 *ejungwoo::make(Int_t s, TH1 *h) { //jumpto_maken
   init();
   h->GetXaxis()->CenterTitle();
-  h->GetXaxis()->SetTitleOffset(fXTitleOffset2);
-  h->GetXaxis()->SetTitleSize(fAxisTitleSize2);
-  h->GetXaxis()->SetLabelSize(fAxisLabelSize2);
+  h->GetXaxis()->SetTitleOffset(fXTitleOffsets[s]);
+  h->GetXaxis()->SetTitleSize(fAxisTitleSizes[s]);
+  h->GetXaxis()->SetLabelSize(fAxisLabelSizes[s]);
   h->GetYaxis()->CenterTitle();
-  h->GetYaxis()->SetTitleOffset(fYTitleOffset2);
-  h->GetYaxis()->SetTitleSize(fAxisTitleSize2);
-  h->GetYaxis()->SetLabelSize(fAxisLabelSize2);
+  h->GetYaxis()->SetTitleOffset(fYTitleOffsets[s]);
+  h->GetYaxis()->SetTitleSize(fAxisTitleSizes[s]);
+  h->GetYaxis()->SetLabelSize(fAxisLabelSizes[s]);
   h->GetZaxis()->CenterTitle();
-  h->GetZaxis()->SetTitleOffset(fYTitleOffset2);
-  h->GetZaxis()->SetTitleSize(fAxisTitleSize2);
-  h->GetZaxis()->SetLabelSize(fAxisLabelSize2);
+  //h->GetZaxis()->SetTitleOffset(fYTitleOffsets[s]);
+  h->GetZaxis()->SetTitleSize(fAxisTitleSizes[s]);
+  h->GetZaxis()->SetLabelSize(fAxisLabelSizes[s]);
 
   h->GetXaxis()->SetTitleFont(fDefaultFont);
   h->GetYaxis()->SetTitleFont(fDefaultFont);
@@ -812,33 +902,10 @@ TH1 *style::make2(TH1 *h) { //jumpto_makeh2
   return h;
 }
 
-TH1 *style::make(TH1 *h) { //jumpto_makeh
-  init();
-  h->GetXaxis()->CenterTitle();
-  h->GetXaxis()->SetTitleOffset(fXTitleOffset);
-  h->GetXaxis()->SetTitleSize(fAxisTitleSize);
-  h->GetXaxis()->SetLabelSize(fAxisLabelSize);
-  h->GetYaxis()->CenterTitle();
-  h->GetYaxis()->SetTitleOffset(fYTitleOffset);
-  h->GetYaxis()->SetTitleSize(fAxisTitleSize);
-  h->GetYaxis()->SetLabelSize(fAxisLabelSize);
-  h->GetZaxis()->CenterTitle();
-  h->GetZaxis()->SetTitleOffset(fYTitleOffset);
-  h->GetZaxis()->SetTitleSize(fAxisTitleSize);
-  h->GetZaxis()->SetLabelSize(fAxisLabelSize);
+TH1 *ejungwoo::make(TH1 *h) { return ejungwoo::make(0,h); } //jumpto_makeh
+TH1 *ejungwoo::make2(TH1 *h) { return ejungwoo::make(2,h); } //jumpto_makeh2 
 
-  h->GetXaxis()->SetTitleFont(fDefaultFont);
-  h->GetYaxis()->SetTitleFont(fDefaultFont);
-  h->GetZaxis()->SetTitleFont(fDefaultFont);
-  h->GetXaxis()->SetLabelFont(fDefaultFont);
-  h->GetYaxis()->SetLabelFont(fDefaultFont);
-  h->GetZaxis()->SetLabelFont(fDefaultFont);
-
-  free(h);
-  return h;
-}
-
-TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel
+TLegend *ejungwoo::make(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -867,7 +934,7 @@ TLegend *style::make(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel
   return legend;
 }
 
-TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel2
+TLegend *ejungwoo::make2(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_makel2
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -895,7 +962,7 @@ TLegend *style::make2(TLegend *legend, Double_t dx, Double_t dy) { //jumpto_make
   return legend;
 }
 
-TPaveText *style::make(TPaveText *pave) { //jumpto_makep
+TPaveText *ejungwoo::make(TPaveText *pave) { //jumpto_makep
   init();
   auto y2=1.-fTMargin;
   if(gStyle->GetOptStat() != 0) y2=gStyle->GetStatY()-gStyle->GetStatH();
@@ -923,19 +990,27 @@ TPaveText *style::make(TPaveText *pave) { //jumpto_makep
   return pave;
 }
 
-TF1 *style::make(TF1 *f) { //jumpto_makef
+TF1 *ejungwoo::make(TF1 *f) { //jumpto_makef
   make(f->GetHistogram());
   f->SetNpx(1000);
   return f;
 }
 
-TF1 *style::settitle(TF1 *f, TString title)
+TF1 *ejungwoo::settitle(TF1 *f, TString title)
 {
   f -> GetHistogram() -> SetTitle(title);
   return f;
 }
 
-TH1 *style::tohist(Double_t *buffer, Int_t n, TString name, TString title)
+TGraphErrors *tograph(TString filename)
+{
+  ifstream file(filename);
+  file.close();
+  auto graph = new TGraphErrors();
+  return graph;
+}
+
+TH1 *ejungwoo::tohist(Double_t *buffer, Int_t n, TString name, TString title)
 {
   if(name.IsNull()) name=Form("hist-%d",fIHist);
   auto hist = new TH1D(name, title, n, 0, n+1);
@@ -945,7 +1020,7 @@ TH1 *style::tohist(Double_t *buffer, Int_t n, TString name, TString title)
   return make(hist);
 }
 
-TH1 *style::tohist(Double_t *buffer, Int_t i, Int_t f, TString name, TString title)
+TH1 *ejungwoo::tohist(Double_t *buffer, Int_t i, Int_t f, TString name, TString title)
 {
   if(name.IsNull()) name=Form("hist-%d",fIHist);
   auto hist = new TH1D(name, title, f-i+1, i, f+1);
@@ -955,9 +1030,9 @@ TH1 *style::tohist(Double_t *buffer, Int_t i, Int_t f, TString name, TString tit
   return make(hist);
 }
 
-void style::axisd(Int_t nd) { fNDivisions=nd; }
+void ejungwoo::axisd(Int_t nd) { fNDivisions=nd; }
 
-TH1 *style::free(TH1 *h) {
+TH1 *ejungwoo::free(TH1 *h) {
   /*
   Set the number of divisions for this axis.
 
@@ -977,7 +1052,7 @@ TH1 *style::free(TH1 *h) {
   return h;
 }
 
-TH1 *style::dndx(TH1 *h)
+TH1 *ejungwoo::dndx(TH1 *h)
 {
   auto hist = (TH1 *) h -> Clone();
   auto nbins = hist->GetXaxis()->GetNbins();
@@ -991,7 +1066,7 @@ TH1 *style::dndx(TH1 *h)
   return hist;
 }
 
-TH1 *style::norm_max(TH1 *h, Double_t maxto)
+TH1 *ejungwoo::norm_max(TH1 *h, Double_t maxto)
 {
   auto hist = (TH1 *) h -> Clone();
   auto valmax = max(hist);
@@ -1003,7 +1078,7 @@ TH1 *style::norm_max(TH1 *h, Double_t maxto)
   return hist;
 }
 
-TH1 *style::norm_integral(TH1 *h, Double_t normto)
+TH1 *ejungwoo::norm_integral(TH1 *h, Double_t normto)
 {
   auto hist = (TH1 *) h -> Clone();
   auto integral = hist -> Integral();
@@ -1018,14 +1093,14 @@ TH1 *style::norm_integral(TH1 *h, Double_t normto)
   return hist;
 }
 
-void style::version(TString v) {
+void ejungwoo::version(TString v) {
   fVersion = v;
   if(fVerbose>0) cout<<"fVersion=["<<fVersion<<"]"<<endl;
 }
 
-TString style::version() { return fVersion; }
+TString ejungwoo::version() { return fVersion; }
 
-TFile *style::gfile(TString filename) {
+TFile *ejungwoo::gfile(TString filename) {
   if(filename.Index(".root")<0)
     filename=filename+".root";
   if(!fVersion.IsNull())
@@ -1035,21 +1110,31 @@ TFile *style::gfile(TString filename) {
     fSaveGFile = new TFile(filename,"recreate");
   return fSaveGFile;
 }
-void style::fsave(bool val) {
+
+bool ejungwoo::isfile(TString filename) {
+  TString name=gSystem->Which(".",filename.Data());
+  if (name.IsNull())
+    return false;
+  return true;
+}
+
+void ejungwoo::fsave(bool val) {
   fSave=val;
   if(fVerbose>0) {
-    if(fSave) cout<<"fSave=true; TCanvas will be written by style::save(TCanvas *) method."<<endl;
-    else      cout<<"fSave=false; TCanvas will NOT!! be written by style::save(TCanvas *) method."<<endl;
+    if(fSave) cout<<"fSave=true; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<endl;
+    else      cout<<"fSave=false; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<endl;
   }
 }
 
-void style::save(TVirtualPad *cvs, TString format, bool version_control) {
+void ejungwoo::fig(TString name) { fFigDirName = name; }
+
+void ejungwoo::save(TVirtualPad *cvs, TString format, bool version_control) {
   save(((TCanvas *)cvs), format, version_control);
 }
 
-void style::save(TCanvas *cvs, TString format, bool version_control) {
+void ejungwoo::save(TCanvas *cvs, TString format, bool version_control) {
   if(!fSave) return;
-  TString path=TString(gSystem->Getenv("PWD"))+"/figures/";
+  TString path=TString(gSystem->Getenv("PWD"))+"/"+fFigDirName+"/";
   gSystem->Exec(TString("mkdir -p ")+path);
   TString name=cvs->GetName();
   TString full_name=name+"."+format;
@@ -1070,9 +1155,9 @@ void style::save(TCanvas *cvs, TString format, bool version_control) {
   }
 }
 
-void style::save(TString name, TCanvas *cvs, TString format, bool version_control) {
+void ejungwoo::save(TString name, TCanvas *cvs, TString format, bool version_control) {
   if(!fSave) return;
-  TString path=TString(gSystem->Getenv("PWD"))+"/figures/";
+  TString path=TString(gSystem->Getenv("PWD"))+"/"+fFigDirName+"/";
   gSystem->Exec(TString("mkdir -p ")+path);
   TString full_name=name+"."+format;
   if(!fVersion.IsNull()) {
@@ -1092,15 +1177,15 @@ void style::save(TString name, TCanvas *cvs, TString format, bool version_contro
   }
 }
 
-void style::fwrite(bool val) {
+void ejungwoo::fwrite(bool val) {
   fWrite=val;
   if(fVerbose>0) {
-    if(fWrite) cout<<"fWrite=true; TObject will be written by style::write(TObject *) method."<<endl;
-    else       cout<<"fWrite=false; TObject will NOT!! be written by style::write(TObject *) method."<<endl;
+    if(fWrite) cout<<"fWrite=true; TObject will be written by ejungwoo::write(TObject *) method."<<endl;
+    else       cout<<"fWrite=false; TObject will NOT!! be written by ejungwoo::write(TObject *) method."<<endl;
   }
 }
 
-void style::write(TObject *obj, bool version_control) {
+void ejungwoo::write(TObject *obj, bool version_control) {
   if(!fWrite) return;
   TString path=TString(gSystem->Getenv("PWD"))+"/data/";
   gSystem->Exec(TString("mkdir -p ")+path);
@@ -1129,7 +1214,7 @@ void style::write(TObject *obj, bool version_control) {
   }
 }
 
-void style::write(TString name, TNamed *obj, bool version_control = true){
+void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
   if(!fWrite) return;
   TString path=TString(gSystem->Getenv("PWD"))+"/data/";
   gSystem->Exec(TString("mkdir -p ")+path);
@@ -1182,7 +1267,7 @@ void style::write(TString name, TNamed *obj, bool version_control = true){
 }
 
 
-TF1 *style::fitg(TH1 *h,Double_t c,Option_t *opt) {
+TF1 *ejungwoo::fitg(TH1 *h,Double_t c,Option_t *opt) {
   if(fVerbose>1) {
     if(!TString(opt).IsNull()) cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
     else                       cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
@@ -1212,7 +1297,7 @@ TF1 *style::fitg(TH1 *h,Double_t c,Option_t *opt) {
   return f;
 }
 
-TF1 *style::fitgg(TH1 *h,Double_t c,Option_t *opt) {
+TF1 *ejungwoo::fitgg(TH1 *h,Double_t c,Option_t *opt) {
   auto binmax=h->GetMaximumBin();
   auto max=h->GetBinContent(binmax);
   auto xmax=h->GetXaxis()->GetBinCenter(binmax);
@@ -1260,7 +1345,7 @@ TF1 *style::fitgg(TH1 *h,Double_t c,Option_t *opt) {
   return f;
 }
 
-TF1 *style::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
+TF1 *ejungwoo::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
   if (n<1) return nullptr;
   else if (n==1) return fitg(h,c,opt);
   else if (n==2) return fitgg(h,c,opt);
@@ -1357,7 +1442,7 @@ TF1 *style::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
   return f;
 }
 
-TF1 *style::gg(TF1 *f1, Int_t i) {
+TF1 *ejungwoo::gg(TF1 *f1, Int_t i) {
   double min,max;
   f1->GetRange(min,max);
   auto f=new TF1(Form("%s_%d",f1->GetName(),i),"gaus(0)",min,max);
@@ -1372,12 +1457,21 @@ TF1 *style::gg(TF1 *f1, Int_t i) {
   return f;
 }
 
-TH1D *style::cutx(TH1 *h2, Int_t bin1, Int_t bin2) {
+void ejungwoo::drawgg(TF1 *f, Option_t *opt)
+{
+  Int_t np = f -> GetNpar();
+  Int_t ng = Int_t(np/3);
+  for (auto ig=0;ig<ng;++ig)
+    gg(f,ig)->Draw(opt);
+  f -> Draw(opt);
+}
+
+TH1D *ejungwoo::cutx(TH1 *h2, Int_t bin1, Int_t bin2) {
   TGraph graph;
   return cutx(h2,bin1,bin2,&graph);
 }
 
-TH1D *style::cutx(TH1 *hist, Int_t bin1, Int_t bin2, TGraph *cut_area) {
+TH1D *ejungwoo::cutx(TH1 *hist, Int_t bin1, Int_t bin2, TGraph *cut_area) {
   auto h2 = (TH2 *) hist;
   auto x1=h2->GetXaxis()->GetBinLowEdge(bin1);
   auto x2=h2->GetXaxis()->GetBinUpEdge(bin2);
@@ -1396,7 +1490,7 @@ TH1D *style::cutx(TH1 *hist, Int_t bin1, Int_t bin2, TGraph *cut_area) {
   return hp;
 }
 
-TObjArray *style::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut) {
+TObjArray *ejungwoo::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut) {
   auto h2 = (TH2 *) hist;
   auto nbins=h2->GetXaxis()->GetNbins();
   auto dbin=nbins/nDivision;
@@ -1417,7 +1511,7 @@ TObjArray *style::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
     auto f1=fitg(hp,c);
 
     if(fVerboseG>0) {
-      style::cv1();
+      ejungwoo::cv1();
       make(hp)->Draw();
       f1->Draw("same");
       if(fVerboseG>1&&fSaveGFile!=nullptr) {
@@ -1426,7 +1520,7 @@ TObjArray *style::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
       }
     }
 
-    auto hd=new style::hdata(hp);
+    auto hd=new ejungwoo::hdata(hp);
     array->Add(hd);
     hd->n=n;
     hd->x=(x1+x2)/2;
@@ -1441,7 +1535,7 @@ TObjArray *style::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
   return array;
 }
 
-TObjArray *style::fitgsy_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut) {
+TObjArray *ejungwoo::fitgsy_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut) {
   auto h2 = (TH2 *) hist;
   auto nbins=h2->GetYaxis()->GetNbins();
   auto dbin=nbins/nDivision;
@@ -1462,7 +1556,7 @@ TObjArray *style::fitgsy_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
     auto f1=fitg(hp,c);
 
     if(fVerboseG>0) {
-      style::cv1();
+      ejungwoo::cv1();
       make(hp)->Draw();
       f1->Draw("same");
       if(fVerboseG>1&&fSaveGFile!=nullptr) {
@@ -1471,7 +1565,7 @@ TObjArray *style::fitgsy_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
       }
     }
 
-    auto hd=new style::hdata(hp);
+    auto hd=new ejungwoo::hdata(hp);
     array->Add(hd);
     hd->n=n;
     hd->y=(y1+y2)/2;
@@ -1484,26 +1578,26 @@ TObjArray *style::fitgsy_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entr
   return array;
 }
 
-TGraphErrors *style::fitgsx(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut, bool error_graph) {
+TGraphErrors *ejungwoo::fitgsx(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut, bool error_graph) {
   if(error_graph)
-    return fitgsx(hist,"x","dy","","ddy",nDivision,c,entry_cut);
+    return fitgsx(hist,"x","dy","dx/2","ddy",nDivision,c,entry_cut);
   return fitgsx(hist,"x","y","dx/2","dy",nDivision,c,entry_cut);
 }
 
-TGraphErrors *style::fitgsy(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut, bool error_graph) {
+TGraphErrors *ejungwoo::fitgsy(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut, bool error_graph) {
   if(error_graph)
     return fitgsy(hist,"y","dx","ddx","",nDivision,c,entry_cut);
   return fitgsy(hist,"x","y","dx","dy/2",nDivision,c,entry_cut);
 }
 
-TGraphErrors *style::fitgsx(TH1 *hist, TString xo, TString yo, TString xoe, TString yoe, Int_t nDivision, Double_t c, Int_t entry_cut) {
+TGraphErrors *ejungwoo::fitgsx(TH1 *hist, TString xo, TString yo, TString xoe, TString yoe, Int_t nDivision, Double_t c, Int_t entry_cut) {
   auto h2 = (TH2 *) hist;
   auto graph=new TGraphErrors();
   auto array=fitgsx_list(h2,nDivision,c,entry_cut);
   if(fVerbose>1)
     cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << endl;
   for (auto i=0; i<array->GetEntries(); ++i) {
-    auto h=(style::hdata*)array->At(i);
+    auto h=(ejungwoo::hdata*)array->At(i);
     graph->SetPoint(i,h->get(xo),h->get(yo));
     graph->SetPointError(i,h->get(xoe),h->get(yoe));
     if(fVerbose>1)
@@ -1512,14 +1606,14 @@ TGraphErrors *style::fitgsx(TH1 *hist, TString xo, TString yo, TString xoe, TStr
   return make(graph);
 }
 
-TGraphErrors *style::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, TString yoe, Int_t nDivision, Double_t c, Int_t entry_cut) {
+TGraphErrors *ejungwoo::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, TString yoe, Int_t nDivision, Double_t c, Int_t entry_cut) {
   auto h2 = (TH2 *) hist;
   auto graph=new TGraphErrors();
   auto array=fitgsy_list(h2,nDivision,c,entry_cut);
   if(fVerbose>1)
     cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << endl;
   for (auto i=0; i<array->GetEntries(); ++i) {
-    auto h=(style::hdata*)array->At(i);
+    auto h=(ejungwoo::hdata*)array->At(i);
     graph->SetPoint(i,h->get(xo),h->get(yo));
     graph->SetPointError(i,h->get(xoe),h->get(yoe));
     if(fVerbose>1)
@@ -1528,7 +1622,7 @@ TGraphErrors *style::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, TStr
   return make(graph);
 }
 
-TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp4
+TObjArray *ejungwoo::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp4
   int count=0;
   auto histograms = new TObjArray();
   for (TCut cut : cuts) {
@@ -1542,7 +1636,7 @@ TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> 
         auto cvs=cc(cname);
         make(hist)->Draw("colz");
         if(fGbOption>1)
-          save(cvs,"png");
+          save(cvs,"pdf");
       }
     }
     else {
@@ -1552,7 +1646,7 @@ TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> 
         auto cvs=cv(cname);
         make(hist)->Draw();
         if(fGbOption>1)
-          save(cvs,"png");
+          save(cvs,"pdf");
       }
     }
     ++count;
@@ -1560,21 +1654,21 @@ TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> 
   return histograms;
 }
 
-TObjArray *style::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,int ny) { //jumpto_tp5
+TObjArray *ejungwoo::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,int ny) { //jumpto_tp5
   if(nx==-1)nx=200;
   if(ny==-1)ny=200;
   if(formula.Index(":")>=0) return tp(name,tree,formula,cuts,title,nx,0,0,ny,-1,-1);
   else                      return tp(name,tree,formula,cuts,title,nx,0,0,-1,-1,-1);
 }
 
-TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,int ny) { //jumpto_tp3
+TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,int ny) { //jumpto_tp3
   if(nx==-1)nx=200;
   if(ny==-1)ny=200;
   if(formula.Index(":")>=0) return tp(tree,formula,cut,name,title,nx,0,0,ny,-1,-1);
   else                      return tp(tree,formula,cut,name,title,nx,0,0,-1,-1,-1);
 }
 
-TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp0
+TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp0
   if(fVerbose>0) {
     if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
     else                       cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
@@ -1626,11 +1720,11 @@ TH1 *style::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,i
   return make(h);
 };
 
-TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp2
+TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp2
   return tp(tree,formula,cut,name,title,nx,x1,x2,ny,y1,y2);
 };
 
-TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins) //jumpto_tp1
+TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins) //jumpto_tp1
 {
   if(fVerbose>0) {
     if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
@@ -1642,7 +1736,7 @@ TH1 *style::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,i
   return make(h);
 }
 
-TCutG *style::cutg(TString f, TString cutname, TString x, TString y) {
+TCutG *ejungwoo::cutg(TString f, TString cutname, TString x, TString y) {
   auto file=new TFile(f.Data(),"read");
   auto cg=(TCutG *) file->Get(cutname.Data());
   cg->SetVarX(x.Data());
@@ -1650,14 +1744,14 @@ TCutG *style::cutg(TString f, TString cutname, TString x, TString y) {
   return cg;
 }
 
-TCutG *style::cutg(TFile *file, TString cutname, TString x, TString y) {
+TCutG *ejungwoo::cutg(TFile *file, TString cutname, TString x, TString y) {
   auto cg=(TCutG *) file->Get(cutname.Data());
   cg->SetVarX(x.Data());
   cg->SetVarY(y.Data());
   return cg;
 }
 
-TH1 *style::cutg(TH1 *h, TCutG *cut) {
+TH1 *ejungwoo::cutg(TH1 *h, TCutG *cut) {
   auto h2 = (TH2 *) h;
   auto hnew = (TH2 *) h2 -> Clone();
   hnew -> Reset();
@@ -1678,7 +1772,7 @@ TH1 *style::cutg(TH1 *h, TCutG *cut) {
   return (TH1 *) hnew;
 }
 
-TH1 *style::cutg_or(TH1 *h, TCutG *cut, TCutG *orcut) {
+TH1 *ejungwoo::cutg_or(TH1 *h, TCutG *cut, TCutG *orcut) {
   auto h2 = (TH2 *) h;
   auto hnew = (TH2 *) h2 -> Clone();
   hnew -> Reset();
@@ -1699,7 +1793,7 @@ TH1 *style::cutg_or(TH1 *h, TCutG *cut, TCutG *orcut) {
   return (TH1 *) hnew;
 }
 
-TH1 *style::cutg_and(TH1 *h, TCutG *cut, TCutG *andcut) {
+TH1 *ejungwoo::cutg_and(TH1 *h, TCutG *cut, TCutG *andcut) {
   auto h2 = (TH2 *) h;
   auto hnew = (TH2 *) h2 -> Clone();
   hnew -> Reset();
@@ -1720,7 +1814,7 @@ TH1 *style::cutg_and(TH1 *h, TCutG *cut, TCutG *andcut) {
   return (TH1 *) hnew;
 }
 
-TH1 *style::inv(TH1 *h) {
+TH1 *ejungwoo::inv(TH1 *h) {
   auto h2 = (TH2 *) h;
   auto nx=h2->GetXaxis()->GetNbins();
   auto xl=h2->GetXaxis()->GetBinLowEdge(1);
@@ -1733,7 +1827,6 @@ TH1 *style::inv(TH1 *h) {
   auto hnew = new TH2D(name,title,ny,yl,yh,nx,xl,xh);
   for (auto binx=1;binx<=nx;++binx)
     for (auto biny=1;biny<=ny;++biny) {
-      //hnew->SetBinContent(biny,binx,h2->GetBinContent(binx,biny));
       auto x=h2->GetXaxis()->GetBinCenter(binx);
       auto y=h2->GetYaxis()->GetBinCenter(biny);
       Int_t n=h2->GetBinContent(binx,biny);
@@ -1743,7 +1836,7 @@ TH1 *style::inv(TH1 *h) {
   return make((TH1 *)hnew);
 }
 
-void style::pfname(TString str, TString &pathname, TString &filename, TString delim="/") {
+void ejungwoo::pfname(TString str, TString &pathname, TString &filename, TString delim="/") {
   TObjArray *tokens=str.Tokenize(delim);
   auto n=tokens->GetEntries();
   pathname="";
@@ -1754,18 +1847,19 @@ void style::pfname(TString str, TString &pathname, TString &filename, TString de
   filename=((TObjString *) tokens->At(n-1))->GetString();
 }
 
-TString style::firstname(TString str, TString delim=".") {
+TString ejungwoo::firstname(TString str, TString delim=".") {
   if(str.Index(delim)<=0)
     return TString();
   TObjArray *tokens=str.Tokenize(delim);
   return ((TObjString *) tokens->At(0))->GetString();
 }
 
-TString style::lastname(TString str, TString delim="/") {
+TString ejungwoo::lastname(TString str, TString delim="/") {
   TObjArray *tokens=str.Tokenize(delim);
   return ((TObjString *) tokens->At(tokens->GetEntries()-1))->GetString();
 }
 
-TString style::justname(TString str) {
+TString ejungwoo::justname(TString str) {
   return firstname(lastname(str));
 }
+:q
