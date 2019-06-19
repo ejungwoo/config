@@ -296,6 +296,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
      int fVerbose=1;
      int fVerboseG=0;
      int fGbOption=0;
+    int fDefaultMake = 1;
 
     bool fDarkMode=false;
 
@@ -346,8 +347,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   double fYStat=0.88;
 
   double fTMargin=0.12;
-  double fBMargin=0.15;
-  double fLMargin=0.17;
+  double fBMargin=0.16;
+  double fLMargin=0.19;
   double fRMargin=0.055;
   double fRMarginH1=0.055;
   double fRMarginH2=0.155;
@@ -355,8 +356,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   double fMainTitleSize=0.08;
   double fAxisTitleSizes[]={0.05,0.065,0.09,0.11};
   double fAxisLabelSizes[]={0.05,0.06 ,0.07,0.09};
-  double fXTitleOffsets[]= {1.25,1.10, 0.80,0.80};
-  double fYTitleOffsets[]= {1.80,1.20, 1.10,1.00};
+  double fXTitleOffsets[]= {1.30,1.15, 0.80,0.80};
+  double fYTitleOffsets[]= {1.90,1.45, 1.10,1.00};
 
   int fDefaultFont=132;
 
@@ -1017,7 +1018,7 @@ TH1 *ejungwoo::tohist(Double_t *buffer, Int_t n, TString name, TString title)
   for (auto i = 0; i < n; ++i)
     hist -> SetBinContent(i+1,buffer[i]);
   ++fIHist;
-  return make(hist);
+  return make(fDefaultMake,hist);
 }
 
 TH1 *ejungwoo::tohist(Double_t *buffer, Int_t i, Int_t f, TString name, TString title)
@@ -1027,7 +1028,7 @@ TH1 *ejungwoo::tohist(Double_t *buffer, Int_t i, Int_t f, TString name, TString 
   for (auto bin = i; bin < f+1; ++bin)
     hist -> SetBinContent(bin+1-i,buffer[bin]);
   ++fIHist;
-  return make(hist);
+  return make(fDefaultMake,hist);
 }
 
 void ejungwoo::axisd(Int_t nd) { fNDivisions=nd; }
@@ -1717,7 +1718,7 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
   }
   auto n=tree->Project(name,formula,cut);
   if(fVerbose>0)cout<<n<<endl;
-  return make(h);
+  return make(fDefaultMake,h);
 };
 
 TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp2
@@ -1733,7 +1734,7 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
   TH1 *h=new TH1D(name,title,nx,xbins);
   auto n=tree->Project(name,formula,cut);
   if(fVerbose>0)cout<<n<<endl;
-  return make(h);
+  return make(fDefaultMake,h);
 }
 
 TCutG *ejungwoo::cutg(TString f, TString cutname, TString x, TString y) {
@@ -1833,7 +1834,7 @@ TH1 *ejungwoo::inv(TH1 *h) {
       for (auto i=0;i<n;++i)
         hnew->Fill(y,x);
     }
-  return make((TH1 *)hnew);
+  return make(fDefaultMake,(TH1 *)hnew);
 }
 
 void ejungwoo::pfname(TString str, TString &pathname, TString &filename, TString delim="/") {
@@ -1862,4 +1863,3 @@ TString ejungwoo::lastname(TString str, TString delim="/") {
 TString ejungwoo::justname(TString str) {
   return firstname(lastname(str));
 }
-:q
