@@ -6,10 +6,12 @@
  * using namespace ejungwoo;
  */
 
+#ifndef EJUNGWOO_H
+#define EJUNGWOO_H
+
 #include <vector>
 #include <iostream>
 #include <fstream>
-using namespace std;
 
 #include "TF1.h"
 #include "TH1.h"
@@ -100,7 +102,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   TCutG *cutg (TString f, TString cutname, TString x, TString y); ///< set TCutG from file name
   TCutG *cutg (TFile  *f, TString cutname, TString x, TString y); ///< set TCutG from file
 
-  TH1   *cutg    (TH1  *h, TCutG *cut); ///< recreate histogram with given graphical cut
+  TH1   *cutg    (TH1 *h, TCutG *cut); ///< recreate histogram with given graphical cut
   TH1   *cutg_or (TH1 *h, TCutG *cut, TCutG *orcut);
   TH1   *cutg_and(TH1 *h, TCutG *cut, TCutG *andcut);
 
@@ -123,9 +125,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   void  write(TObject *obj, bool version_control = true); ///< write object ./data/[obj name].[version-automatically updated].root
   void  write(TString name, TNamed *obj, bool version_control = true); ///< write to file with name 'name'
 
-  TGraph *sumf(vector<TF1*> &fs); ///< TODO create TF1 which is sum of TF1s in fs;
+  TGraph *sumf(std::vector<TF1*> &fs); ///< TODO create TF1 which is sum of TF1s in fs;
 
-  TF1 *fitg (TH1 *h, Double_t c=1.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
+  TF1 *fitg (TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitgg(TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitng(Int_t n, TH1 *h, Double_t c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1    *gg(TF1 *f, Int_t i); ///< get i'th gaussian from multipule gaussian function f1
@@ -144,7 +146,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
       double x=0,y=0,dx=0,ddx=0,dy=0,ddy=0;
       hdata(TH1D *h):TObject(),hist(h) {}
       virtual ~hdata() {}
-      void print() { cout<<"n:"<<n<<"| xy:"<<x<<", "<<y<<"| dxy:"<<dx<<", "<<dy<<"| ddxy:"<<ddx<<", "<<ddy<<endl; }
+      void print() { std::cout<<"n:"<<n<<"| xy:"<<x<<", "<<y<<"| dxy:"<<dx<<", "<<dy<<"| ddxy:"<<ddx<<", "<<ddy<<std::endl; }
       double error() { return sqrt(dx*dx+dy*dy); }
       double get(TString v) {
         double c = 1;
@@ -160,6 +162,69 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
         return 0;
       }
   };
+
+  class drawing : public TObject {
+    public:
+      drawing(TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0)
+      : fObj(obj), fOpt(opt), fType0(type0), fType1(type1), fType2(type2), fType3(type3) {}
+
+      virtual void Draw(Option_t *opt="") {
+        auto sopt = TString(opt);
+             if (sopt.Index("t0")>=0&&!fType0) {std::cout<<fObj->GetName()<<" is not type0, therefore, omitted."<<std::endl;}
+        else if (sopt.Index("t1")>=0&&!fType1) {std::cout<<fObj->GetName()<<" is not type1, therefore, omitted."<<std::endl;}
+        else if (sopt.Index("t2")>=0&&!fType2) {std::cout<<fObj->GetName()<<" is not type2, therefore, omitted."<<std::endl;}
+        else if (sopt.Index("t3")>=0&&!fType3) {std::cout<<fObj->GetName()<<" is not type3, therefore, omitted."<<std::endl;}
+        else
+          fObj->Draw(fOpt.Data());
+      }
+
+      TObject *fObj;
+      TString fOpt;
+      Bool_t fType0 = 0;
+      Bool_t fType1 = 0;
+      Bool_t fType2 = 0;
+      Bool_t fType3 = 0;
+  };
+
+  class acanvas : public TObjArray {
+    public:
+      acanvas(TString name) { SetName(name); }
+      void add(TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0) {
+        if (opt.IsNull()&&GetEntries()!=0)
+          opt="same";
+        auto drawingo = new drawing(obj,opt,type0,type1,type2,type3);
+
+        TString className = obj->ClassName();
+        if (fFrameType==0) {
+               if (className.Index("TH1")==0) fFrameType = 1;
+          else if (className.Index("TH2")==0) fFrameType = 2;
+        }
+
+        ejungwoo::make(obj);
+        TObjArray::Add(drawingo);
+      }
+
+      TCanvas *draw(TString opt="cvs") {
+        if (opt.Index("cvs")>=0) {
+          opt.ReplaceAll("cvs","");
+          TCanvas *cvs = nullptr;
+          if (fFrameType==2) cvs = cc(fName);
+          else cvs = cv(fName);
+        }
+        Draw(opt);
+        return (TCanvas *) gPad;
+      }
+
+      Int_t fFrameType = 0;
+  };
+
+  void add(                TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
+  void addto(int i,        TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
+  void addto(TString name, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
+  void addto(acanvas *acv, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
+  void draw(int i=0,TString opt="cvs");
+  void draw(TString name,TString opt="cvs");
+
 
   /**
    * fit 2d histogram through x with given parameters and return list of histogram data
@@ -355,7 +420,7 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
 
   double fMainTitleSize=0.08;
   double fAxisTitleSizes[]={0.05,0.065,0.09,0.11};
-  double fAxisLabelSizes[]={0.05,0.06 ,0.07,0.09};
+  double fAxisLabelSizes[]={0.045,0.05 ,0.07,0.09};
   double fXTitleOffsets[]= {1.30,1.15, 0.80,0.80};
   double fYTitleOffsets[]= {1.90,1.45, 1.10,1.00};
 
@@ -365,8 +430,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   int fNDivisions2=506;
 
   TObjArray *fFileArray;
+  TObjArray *fACanvasArray;
 }; 
-
 
 void ejungwoo::v(int verbose=1) { fVerbose=verbose; }
 void ejungwoo::g(int verbose=1) { fVerboseG=verbose; }
@@ -387,7 +452,7 @@ void ejungwoo::fstat(int opt) {
 }
 
 void ejungwoo::zcolor(int opt) {
-  if(fVerbose>0) cout<<"zcolor("<<opt<<") >> 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale"<<endl;
+  if(fVerbose>0) std::cout<<"zcolor("<<opt<<") >> 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale"<<std::endl;
        if(opt == 0) gStyle->SetPalette(kBird);
   else if(opt == 1) gStyle->SetPalette(kRainBow);
   else if(opt == 2) gStyle->SetPalette(kDeepSea);
@@ -472,7 +537,7 @@ Color_t ejungwoo::colori(Int_t icolor)
   return fColorList[icolor];
 }
 
-TGraph *ejungwoo::sumf(vector<TF1*> &fs)
+TGraph *ejungwoo::sumf(std::vector<TF1*> &fs)
 {
   auto graph=new TGraph();
   Double_t x,xl,xh;
@@ -533,45 +598,45 @@ Double_t ejungwoo::fwrm(TF1 *f, Double_t ratio, Double_t nx, Double_t &x0, Doubl
     if(valmax < y) {
       valmax=y;
       xmax=x;
-      if(fVerbose>0) cout<<"(valmax,xmax)=("<<valmax<<","<<xmax<<")"<<endl;
+      if(fVerbose>0) std::cout<<"(valmax,xmax)=("<<valmax<<","<<xmax<<")"<<std::endl;
     }
   }
   auto rmax=ratio*valmax;
 
   double dy1=DBL_MAX, dy0=DBL_MAX;
 
-  if(fVerbose>0) cout<<"=================================="<<endl;
+  if(fVerbose>0) std::cout<<"=================================="<<std::endl;
   for (x=xmax;x<=xh;x+=dx) {
     auto y=f->Eval(x);
     auto dy=TMath::Abs(y-rmax);
     if(dy>dy1) {
       x1=x-dx;
-      if(fVerbose>0) cout<<"x1="<<x1<<endl;
+      if(fVerbose>0) std::cout<<"x1="<<x1<<std::endl;
       break;
     }
     dy1=dy;
   }
   if(x==xh) {
-    if(fVerbose>0) cout<<"x==xh ROOT NOT FOUND"<<endl;
+    if(fVerbose>0) std::cout<<"x==xh ROOT NOT FOUND"<<std::endl;
     q=-1; x0=-1; x1=-1; return -1;
   }
-  if(fVerbose>0) cout<<"=================================="<<endl;
+  if(fVerbose>0) std::cout<<"=================================="<<std::endl;
 
   for (x=xmax;x>=xl;x-=dx) {
     auto y=f->Eval(x);
     auto dy=TMath::Abs(y-rmax);
     if(dy>dy0) {
       x0=dx;
-      if(fVerbose>0) cout<<"x0="<<x1<<endl;
+      if(fVerbose>0) std::cout<<"x0="<<x1<<std::endl;
       break;
     }
     dy0=dy;
   }
   if(x==xl) {
-    if(fVerbose>0) cout<<"x==xl ROOT NOT FOUND"<<endl;
+    if(fVerbose>0) std::cout<<"x==xl ROOT NOT FOUND"<<std::endl;
     q=-1; x0=-1; x1=-1; return -1;
   }
-  if(fVerbose>0) cout<<"=================================="<<endl;
+  if(fVerbose>0) std::cout<<"=================================="<<std::endl;
 
   q=TMath::Sqrt(dy0*dy0 + dy1*dy1);
 
@@ -591,7 +656,7 @@ Double_t ejungwoo::fwhm(TF1 *f)
 
 Double_t ejungwoo::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q)
 {
-  if(fVerbose>0) cout<<"assuming histogram "<<h->GetName()<<" is smooth"<<endl;
+  if(fVerbose>0) std::cout<<"assuming histogram "<<h->GetName()<<" is smooth"<<std::endl;
 
   auto hist=(TH1D *) h;
   Int_t binmax;
@@ -604,47 +669,47 @@ Double_t ejungwoo::fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Doub
   auto xh=hist->GetXaxis()->GetBinUpEdge(n);
   auto nn=ndx*(xh-xl)/n;
   if(fVerbose>0) {
-    cout<<"binmax = "<<binmax<<endl;
-    cout<<"xmax = "<<xmax<<endl;
-    cout<<"n  = "<<n<<endl;
-    cout<<"xl = "<<xl<<endl;
-    cout<<"xh = "<<xh<<endl;
-    cout<<"nn = "<<nn<<endl;
+    std::cout<<"binmax = "<<binmax<<std::endl;
+    std::cout<<"xmax = "<<xmax<<std::endl;
+    std::cout<<"n  = "<<n<<std::endl;
+    std::cout<<"xl = "<<xl<<std::endl;
+    std::cout<<"xh = "<<xh<<std::endl;
+    std::cout<<"nn = "<<nn<<std::endl;
   }
 
   double x, dy1=DBL_MAX, dy0=DBL_MAX;
   for (x=xmax;x<=xh;x+=nn) {
-    if(fVerbose>0) cout<<x<<endl;
+    if(fVerbose>0) std::cout<<x<<std::endl;
     auto y=hist->Interpolate(x);
     auto dy=TMath::Abs(y-rmax);
     if(dy>dy1) {
       x1=x-nn;
-      if(fVerbose>0) cout<<"x1="<<x1<<endl;
+      if(fVerbose>0) std::cout<<"x1="<<x1<<std::endl;
       break;
     }
     dy1=dy;
   }
   if(x==xh) {
     q=-1; x0=-1; x1=-1; return -1;
-    if(fVerbose>0) cout<<"x==xh ROOT NOT FOUND"<<endl;
+    if(fVerbose>0) std::cout<<"x==xh ROOT NOT FOUND"<<std::endl;
   }
-  if(fVerbose>0) cout<<"=================================="<<endl;
+  if(fVerbose>0) std::cout<<"=================================="<<std::endl;
 
   for (x=xmax;x>=xl;x-=nn) {
     auto y=hist->Interpolate(x);
     auto dy=TMath::Abs(y-rmax);
     if(dy>dy0) {
       x0=x+nn;
-      if(fVerbose>0) cout<<"x0="<<x1<<endl;
+      if(fVerbose>0) std::cout<<"x0="<<x1<<std::endl;
       break;
     }
     dy0=dy;
   }
   if(x==xl) {
     q=-1; x0=-1; x1=-1; return -1;
-    if(fVerbose>0) cout<<"x==xh ROOT NOT FOUND"<<endl;
+    if(fVerbose>0) std::cout<<"x==xh ROOT NOT FOUND"<<std::endl;
   }
-  if(fVerbose>0) cout<<"=================================="<<endl;
+  if(fVerbose>0) std::cout<<"=================================="<<std::endl;
 
   q=TMath::Sqrt(dy0*dy0 + dy1*dy1);
 
@@ -798,9 +863,11 @@ TCanvas *ejungwoo::div0(TCanvas *c,Int_t nx,Int_t ny)
 
 TObject *ejungwoo::make(TObject *ob) { //jumpto_makeo
   if(ob->InheritsFrom("TGraph"))  make((TGraph*)ob);
+  if(ob->InheritsFrom("TGraphErrors"))  make((TGraphErrors*)ob);
   if(ob->InheritsFrom("TH1"))     make((TH1*)ob);
   if(ob->InheritsFrom("TF1"))     make((TF1*)ob);
   if(ob->InheritsFrom("TLegend")) make((TLegend*)ob);
+  if(ob->InheritsFrom("TPaveText")) make((TLegend*)ob);
   if(ob->InheritsFrom("TCanvas")) make((TCanvas*)ob);
   return ob;
 }
@@ -826,6 +893,7 @@ TCanvas *ejungwoo::make(TCanvas *cvs,TString logs) { //jumpto_makec
     TObject *obj2;
     TIter next(pmtvs);
     while ((obj2 = next())) {
+      //make(obj2);
       if (obj2->InheritsFrom(TPad::Class())) {
         auto innercvs=(TPad*)obj2;
         if (fDarkMode) innercvs -> SetFillColor(kGray);
@@ -840,6 +908,7 @@ TCanvas *ejungwoo::make(TCanvas *cvs,TString logs) { //jumpto_makec
         TObject *obj3;
         TIter next2(pmtvs2);
         while ((obj3 = next2())) {
+          //make(obj3);
           if (obj3->InheritsFrom(TPad::Class())) {
             auto innnercvs=(TPad*)obj3;
             if (fDarkMode) innnercvs -> SetFillColor(kGray);
@@ -1005,7 +1074,8 @@ TF1 *ejungwoo::settitle(TF1 *f, TString title)
 
 TGraphErrors *tograph(TString filename)
 {
-  ifstream file(filename);
+  //TODO
+  std::ifstream file(filename);
   file.close();
   auto graph = new TGraphErrors();
   return graph;
@@ -1096,7 +1166,7 @@ TH1 *ejungwoo::norm_integral(TH1 *h, Double_t normto)
 
 void ejungwoo::version(TString v) {
   fVersion = v;
-  if(fVerbose>0) cout<<"fVersion=["<<fVersion<<"]"<<endl;
+  if(fVerbose>0) std::cout<<"fVersion=["<<fVersion<<"]"<<std::endl;
 }
 
 TString ejungwoo::version() { return fVersion; }
@@ -1122,8 +1192,8 @@ bool ejungwoo::isfile(TString filename) {
 void ejungwoo::fsave(bool val) {
   fSave=val;
   if(fVerbose>0) {
-    if(fSave) cout<<"fSave=true; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<endl;
-    else      cout<<"fSave=false; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<endl;
+    if(fSave) std::cout<<"fSave=true; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<std::endl;
+    else      std::cout<<"fSave=false; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<std::endl;
   }
 }
 
@@ -1152,7 +1222,7 @@ void ejungwoo::save(TCanvas *cvs, TString format, bool version_control) {
       break;
     }
     full_name=name+"."+TString::Itoa(++version_idx,10)+"."+format;
-    if(fVerbose>0&&version_idx%10==0) cout<<"[Warning] More than "<<version_idx<<" versions of "<<name<<"exist!"<<endl;
+    if(fVerbose>0&&version_idx%10==0) std::cout<<"[Warning] More than "<<version_idx<<" versions of "<<name<<"exist!"<<std::endl;
   }
 }
 
@@ -1174,15 +1244,15 @@ void ejungwoo::save(TString name, TCanvas *cvs, TString format, bool version_con
       break;
     }
     full_name=name+"."+TString::Itoa(++version_idx,10)+"."+format;
-    if(fVerbose>0&&version_idx%10==0) cout<<"[Warning] More than "<<version_idx<<" versions of "<<name<<"exist!"<<endl;
+    if(fVerbose>0&&version_idx%10==0) std::cout<<"[Warning] More than "<<version_idx<<" versions of "<<name<<"exist!"<<std::endl;
   }
 }
 
 void ejungwoo::fwrite(bool val) {
   fWrite=val;
   if(fVerbose>0) {
-    if(fWrite) cout<<"fWrite=true; TObject will be written by ejungwoo::write(TObject *) method."<<endl;
-    else       cout<<"fWrite=false; TObject will NOT!! be written by ejungwoo::write(TObject *) method."<<endl;
+    if(fWrite) std::cout<<"fWrite=true; TObject will be written by ejungwoo::write(TObject *) method."<<std::endl;
+    else       std::cout<<"fWrite=false; TObject will NOT!! be written by ejungwoo::write(TObject *) method."<<std::endl;
   }
 }
 
@@ -1196,7 +1266,7 @@ void ejungwoo::write(TObject *obj, bool version_control) {
     full_name=name+"."+fVersion+".root";
     auto file = new TFile(path+full_name,"recreate");
     obj->Write();
-    if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
+    if(fVerbose>0) std::cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<std::endl;
     file->Close();
     return;
   }
@@ -1206,12 +1276,12 @@ void ejungwoo::write(TObject *obj, bool version_control) {
     if(TString(c).IsNull()) {
       auto file = new TFile(path+full_name,"recreate");
       obj->Write();
-      if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
+      if(fVerbose>0) std::cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<std::endl;
       file->Close();
       return;
     }
     full_name=name+"."+TString::Itoa(++version_idx,10)+".root";
-    if(fVerbose>0&&version_idx%10==0) cout<<"[Warning] More than "<<version_idx<<" versions of "<<full_name<<"exist!"<<endl;
+    if(fVerbose>0&&version_idx%10==0) std::cout<<"[Warning] More than "<<version_idx<<" versions of "<<full_name<<"exist!"<<std::endl;
   }
 }
 
@@ -1239,7 +1309,7 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
 
   if(file!=nullptr) {
     obj->Write();
-    if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<file->GetName()<<endl;
+    if(fVerbose>0) std::cout<<"Writing "<<obj->GetName()<<" to "<<file->GetName()<<std::endl;
     return;
   }
   else {
@@ -1248,7 +1318,7 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
       file = new TFile(path+full_name,"recreate");
       fFileArray->Add(file);
       obj->Write();
-      if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
+      if(fVerbose>0) std::cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<std::endl;
       return;
     }
     int version_idx=0;
@@ -1258,11 +1328,11 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
         file = new TFile(path+full_name,"recreate");
         fFileArray->Add(file);
         obj->Write();
-        if(fVerbose>0) cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<endl;
+        if(fVerbose>0) std::cout<<"Writing "<<obj->GetName()<<" to "<<path+full_name<<std::endl;
         return;
       }
       full_name=name+"."+TString::Itoa(++version_idx,10)+".root";
-      if(fVerbose>0&&version_idx%10==0) cout<<"[Warning] More than "<<version_idx<<" versions of "<<full_name<<"exist!"<<endl;
+      if(fVerbose>0&&version_idx%10==0) std::cout<<"[Warning] More than "<<version_idx<<" versions of "<<full_name<<"exist!"<<std::endl;
     }
   }
 }
@@ -1270,8 +1340,8 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
 
 TF1 *ejungwoo::fitg(TH1 *h,Double_t c,Option_t *opt) {
   if(fVerbose>1) {
-    if(!TString(opt).IsNull()) cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
-    else                       cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
+    if(!TString(opt).IsNull()) std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
+    else                       std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
   }
   auto binmax=h->GetMaximumBin();
   auto max=h->GetBinContent(binmax);
@@ -1285,7 +1355,7 @@ TF1 *ejungwoo::fitg(TH1 *h,Double_t c,Option_t *opt) {
 
   Int_t fitcount = 1;
   Double_t xerr2 = 0.;
-  while (fitcount<10&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
+  while (fitcount<20&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
     xerr2=xerr;
     f->SetRange(xmax-c*xerr2,xmax+c*xerr2);
     h->Fit(f,opt);
@@ -1294,7 +1364,7 @@ TF1 *ejungwoo::fitg(TH1 *h,Double_t c,Option_t *opt) {
     ++fitcount;
   }
 
-  if(fVerbose>1)cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<endl;
+  if(fVerbose>1)std::cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<std::endl;
   return f;
 }
 
@@ -1336,9 +1406,9 @@ TF1 *ejungwoo::fitgg(TH1 *h,Double_t c,Option_t *opt) {
   }
 
   if(fVerbose>1) {
-    cout<<"fitgg num-iteration:"<<fitcount<<endl;
-    cout<<" [1 a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"]"<< endl;
-    cout<<" [2 a:"<<f->GetParameter(3)<<", m:"<<f->GetParameter(4)<<", s:"<<f->GetParameter(5)<<"]"<< endl;
+    std::cout<<"fitgg num-iteration:"<<fitcount<<std::endl;
+    std::cout<<" [1 a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"]"<< std::endl;
+    std::cout<<" [2 a:"<<f->GetParameter(3)<<", m:"<<f->GetParameter(4)<<", s:"<<f->GetParameter(5)<<"]"<< std::endl;
   }
 
   f->SetLineColor(kBlack);
@@ -1373,9 +1443,9 @@ TF1 *ejungwoo::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
   }
   h->Fit(f,opt);
 
-  vector<double> xmax;
-  vector<double> xerr;
-  vector<double> pxerr;
+  std::vector<double> xmax;
+  std::vector<double> xerr;
+  std::vector<double> pxerr;
 
   for (auto i=0; i<n; ++i) {
     xmax.push_back(f->GetParameter(i*3+1));
@@ -1433,9 +1503,9 @@ TF1 *ejungwoo::fitng(Int_t n, TH1 *h,Double_t c,Option_t *opt) {
   }
 
   if(fVerbose>1) {
-    cout<<"fit"<<n<<"g num-iteration:"<<fitcount<<endl;
+    std::cout<<"fit"<<n<<"g num-iteration:"<<fitcount<<std::endl;
     for (auto i=0; i<n; ++i)
-      cout<<" ["<<i<<" a:"<<f->GetParameter(i*3+0)<<", m:"<<f->GetParameter(i*3+1)<<", s:"<<f->GetParameter(i*3+2)<<"]"<< endl;
+      std::cout<<" ["<<i<<" a:"<<f->GetParameter(i*3+0)<<", m:"<<f->GetParameter(i*3+1)<<", s:"<<f->GetParameter(i*3+2)<<"]"<< std::endl;
   }
 
   f->SetLineColor(kBlack);
@@ -1489,6 +1559,49 @@ TH1D *ejungwoo::cutx(TH1 *hist, Int_t bin1, Int_t bin2, TGraph *cut_area) {
   }
   auto hp=((TH2 *)h2)->ProjectionY(TString(h2->GetName())+Form("_%.2f>>%.2f",x1,x2),bin1,bin2);
   return hp;
+}
+
+void ejungwoo::add(TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
+  addto(0,obj, opt, type0, type1, type2, type3);
+}
+void ejungwoo::addto(acanvas *acvs, TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
+  acvs->add(obj, opt, type0, type1, type2, type3);
+  if(fVerbose>0) std::cout<<"Drawing "<<obj->GetName()<<" to "<<acvs->GetName()<<std::endl;
+  return;
+}
+void ejungwoo::addto(int i, TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
+  if(fACanvasArray==nullptr)
+    fACanvasArray=new TObjArray();
+
+  auto acvs=(acanvas *)fACanvasArray->At(i);
+  if (acvs==nullptr) {
+    acvs=new acanvas(Form("acvs%d",i));
+    fACanvasArray->AddAt(acvs,i);
+  }
+
+  addto(acvs, obj, opt, type0, type1, type2, type3);
+}
+void ejungwoo::addto(TString name, TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
+  if(fACanvasArray==nullptr)
+    fACanvasArray=new TObjArray();
+
+  auto acvs=(acanvas *)fACanvasArray->FindObject(name);
+  if (acvs==nullptr) {
+    acvs=new acanvas(name);
+    fACanvasArray->Add(acvs);
+  }
+
+  addto(acvs, obj, opt, type0, type1, type2, type3);
+}
+void ejungwoo::draw(int i,TString opt) {
+  auto acvs=(acanvas*)fACanvasArray->At(i);
+  if(acvs!=nullptr)
+    acvs->draw(opt);
+}
+void ejungwoo::draw(TString name,TString opt) {
+  auto acvs=(acanvas*)fACanvasArray->FindObject(name);
+  if(acvs!=nullptr)
+    acvs->draw(opt);
 }
 
 TObjArray *ejungwoo::fitgsx_list(TH1 *hist, Int_t nDivision, Double_t c, Int_t entry_cut) {
@@ -1596,13 +1709,13 @@ TGraphErrors *ejungwoo::fitgsx(TH1 *hist, TString xo, TString yo, TString xoe, T
   auto graph=new TGraphErrors();
   auto array=fitgsx_list(h2,nDivision,c,entry_cut);
   if(fVerbose>1)
-    cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << endl;
+    std::cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << std::endl;
   for (auto i=0; i<array->GetEntries(); ++i) {
     auto h=(ejungwoo::hdata*)array->At(i);
     graph->SetPoint(i,h->get(xo),h->get(yo));
     graph->SetPointError(i,h->get(xoe),h->get(yoe));
     if(fVerbose>1)
-      cout << h->get(xo) << " " << h->get(yo) << " " << h->get(xoe) << " " << h->get(yoe) << endl;
+      std::cout << h->get(xo) << " " << h->get(yo) << " " << h->get(xoe) << " " << h->get(yoe) << std::endl;
   }
   return make(graph);
 }
@@ -1612,13 +1725,13 @@ TGraphErrors *ejungwoo::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, T
   auto graph=new TGraphErrors();
   auto array=fitgsy_list(h2,nDivision,c,entry_cut);
   if(fVerbose>1)
-    cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << endl;
+    std::cout << "graph info. " << xo << " " << yo << " " << xoe << " " << yoe << std::endl;
   for (auto i=0; i<array->GetEntries(); ++i) {
     auto h=(ejungwoo::hdata*)array->At(i);
     graph->SetPoint(i,h->get(xo),h->get(yo));
     graph->SetPointError(i,h->get(xoe),h->get(yoe));
     if(fVerbose>1)
-      cout << h->get(xo) << " " << h->get(yo) << " " << h->get(xoe) << " " << h->get(yoe) << endl;
+      std::cout << h->get(xo) << " " << h->get(yo) << " " << h->get(xoe) << " " << h->get(yoe) << std::endl;
   }
   return make(graph);
 }
@@ -1671,8 +1784,8 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
 
 TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,Double_t x1,Double_t x2,int ny,Double_t y1,Double_t y2) { //jumpto_tp0
   if(fVerbose>0) {
-    if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
-    else                       cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
+    if(!TString(cut).IsNull()) std::cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+    else                       std::cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
   }
   TH1 *h;
   if(x1==0&&x2==0) {
@@ -1717,7 +1830,7 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
     }
   }
   auto n=tree->Project(name,formula,cut);
-  if(fVerbose>0)cout<<n<<endl;
+  if(fVerbose>0)std::cout<<n<<std::endl;
   return make(fDefaultMake,h);
 };
 
@@ -1728,12 +1841,12 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
 TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const Double_t *xbins) //jumpto_tp1
 {
   if(fVerbose>0) {
-    if(!TString(cut).IsNull()) cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
-    else                       cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
+    if(!TString(cut).IsNull()) std::cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+    else                       std::cout<<"tp "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
   }
   TH1 *h=new TH1D(name,title,nx,xbins);
   auto n=tree->Project(name,formula,cut);
-  if(fVerbose>0)cout<<n<<endl;
+  if(fVerbose>0)std::cout<<n<<std::endl;
   return make(fDefaultMake,h);
 }
 
@@ -1863,3 +1976,5 @@ TString ejungwoo::lastname(TString str, TString delim="/") {
 TString ejungwoo::justname(TString str) {
   return firstname(lastname(str));
 }
+
+#endif
