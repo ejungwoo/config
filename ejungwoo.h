@@ -222,8 +222,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   void addto(int i,        TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
   void addto(TString name, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
   void addto(acanvas *acv, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
-  void draw(int i=0,TString opt="cvs");
+  void draw(int i,TString opt="cvs");
   void draw(TString name,TString opt="cvs");
+  void draw(const char* opt="cvs") { draw(0,opt); }
 
 
   /**
