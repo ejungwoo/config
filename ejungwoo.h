@@ -33,6 +33,84 @@
 
 namespace ejungwoo
 {
+    bool fSave=true;
+    bool fWrite=true;
+     int fVerbose=1;
+     int fVerboseG=0;
+     int fGbOption=0;
+     int fDefaultMake=1;
+    bool fDarkMode=false;
+
+     int fNumColors=27;
+ Color_t fColorList[] = {
+   kBlue-4,   kBlue,     kBlue+1,   kAzure+7,
+   kRed-4,    kRed,      kRed+1,
+   kPink-2,   kPink+7,   kPink+3,
+   kSpring+7, kSpring-5, kSpring-6,
+   kCyan+1,   kCyan+2,   kCyan+3,
+   kYellow,
+   kOrange,   kOrange-3, kOrange+8, kOrange+6, kOrange-4,
+   kTeal+5,   kTeal+3,
+   kViolet-5, kViolet-6, kViolet+4};
+
+ TFile *fSaveGFile=nullptr;
+
+ TString fVersion="";
+ TString fFigDirName="figures";
+
+     int fICvs=0;
+     int fIHist=0;
+
+     int fWC1=500;
+     int fWC2=600;
+     int fWC3=680;
+     int fHC3=550;
+     int fWCC2=900;
+     int fHCC2=550;
+     int fWCC3=1200;
+     int fHCC3=800;
+
+     int fYCvs=0;
+
+  double fWDefault=0.1;
+  double fWUnit=0.008;
+  //double fWUnit=0.012;
+  double fHUnit=0.05;
+
+  double fWDefault2=0.2;
+  double fWUnit2=0.010;
+  double fHUnit2=0.07;
+
+  double fWStat=0.25;
+  double fHStat=0.18;
+  double fXStat=0.95;
+  double fYStat=0.88;
+
+  double fTMargin=0.12;
+  double fBMargin=0.16;
+  double fLMargin=0.19;
+  double fRMargin=0.055;
+  double fRMarginH1=0.055;
+  double fRMarginH2=0.155;
+
+  double fMainTitleSize=0.08;
+  double fAxisTitleSizes[]={0.05,0.065,0.09,0.11};
+  double fAxisLabelSizes[]={0.045,0.05 ,0.07,0.09};
+  double fXTitleOffsets[]= {1.30,1.15, 0.80,0.80};
+  double fYTitleOffsets[]= {1.90,1.45, 1.10,1.00};
+
+  int fDefaultFont=132;
+
+  int fNDivisions=508;
+  int fNDivisions2=506;
+
+  TObjArray *fFileArray;
+  TObjArray *fACanvasArray;
+
+
+  /********************************************************/
+
+
   void v(int verbose=1); ///< verbosity "fVerbose" - 0:silent, 1:default
   void g(int graphic=1); ///< graphic verbosity "fVerboseG" - 0:silent(default), 1:draw-details
   void o(int goption=1);
@@ -178,6 +256,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
           fObj->Draw(fOpt.Data());
       }
 
+      TString GetOptString() { return fOpt; }
+
       TObject *fObj;
       TString fOpt;
       Bool_t fType0 = 0;
@@ -190,9 +270,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
     public:
       acanvas(TString name) { SetName(name); }
       void add(TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0) {
-        if (opt.IsNull()&&GetEntries()!=0)
+        if (opt.Index("same")<0&&GetEntries()!=0)
           opt="same";
-        auto drawingo = new drawing(obj,opt,type0,type1,type2,type3);
+        auto dro = new drawing(obj,opt,type0,type1,type2,type3);
 
         TString className = obj->ClassName();
         if (fFrameType==0) {
@@ -201,7 +281,8 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
         }
 
         ejungwoo::make(obj);
-        TObjArray::Add(drawingo);
+        //if(ejungwoo::fVerbose>=2) std::cout<<"Add drawing:"<<obj->GetName()<<"(\""<<opt<<"\")"<<" to acvs:"<<fName<<std::endl;
+        TObjArray::Add(dro);
       }
 
       TCanvas *draw(TString opt="cvs") {
@@ -211,6 +292,17 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
           if (fFrameType==2) cvs = cc(fName);
           else cvs = cv(fName);
         }
+
+        if(ejungwoo::fVerbose>=1)
+        {
+          Int_t numDrawings = GetEntries();
+          for (auto idraw=0; idraw<numDrawings; ++idraw) {
+            auto dro = (drawing *) At(idraw);
+            //auto dro = At(idraw);
+            //std::cout<<"Drawing drawing:"<<dro->GetName()<<"(\""<<dro->GetOptString()<<"\")"<<" to acvs:"<<fName<<std::endl;
+          }
+        }
+
         Draw(opt);
         return (TCanvas *) gPad;
       }
@@ -354,84 +446,6 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   /********************************************************/
 
   void init(); ///< Initialize gStyle setting. Should NOT be run by users.
-
-  /********************************************************/
-
-    bool fSave=true;
-    bool fWrite=true;
-     int fVerbose=1;
-     int fVerboseG=0;
-     int fGbOption=0;
-    int fDefaultMake = 1;
-
-    bool fDarkMode=false;
-
-     int fNumColors=27;
-
- Color_t fColorList[] = {
-   kBlue-4,   kBlue,     kBlue+1,   kAzure+7,
-   kRed-4,    kRed,      kRed+1,
-   kPink-2,   kPink+7,   kPink+3,
-   kSpring+7, kSpring-5, kSpring-6,
-   kCyan+1,   kCyan+2,   kCyan+3,
-   kYellow,
-   kOrange,   kOrange-3, kOrange+8, kOrange+6, kOrange-4, 
-   kTeal+5,   kTeal+3,
-   kViolet-5, kViolet-6, kViolet+4};
-
- TFile *fSaveGFile=nullptr;
-
- TString fVersion="";
- TString fFigDirName="figures";
-
-     int fICvs=0;
-     int fIHist=0;
-
-     int fWC1=500;
-     int fWC2=600;
-     int fWC3=680;
-     int fHC3=550;
-     int fWCC2=900;
-     int fHCC2=550;
-     int fWCC3=1200;
-     int fHCC3=800;
-
-     int fYCvs=0;
-
-  double fWDefault=0.1;
-  double fWUnit=0.008;
-  //double fWUnit=0.012;
-  double fHUnit=0.05;
-
-  double fWDefault2=0.2;
-  double fWUnit2=0.010;
-  double fHUnit2=0.07;
-
-  double fWStat=0.25;
-  double fHStat=0.18;
-  double fXStat=0.95;
-  double fYStat=0.88;
-
-  double fTMargin=0.12;
-  double fBMargin=0.16;
-  double fLMargin=0.19;
-  double fRMargin=0.055;
-  double fRMarginH1=0.055;
-  double fRMarginH2=0.155;
-
-  double fMainTitleSize=0.08;
-  double fAxisTitleSizes[]={0.05,0.065,0.09,0.11};
-  double fAxisLabelSizes[]={0.045,0.05 ,0.07,0.09};
-  double fXTitleOffsets[]= {1.30,1.15, 0.80,0.80};
-  double fYTitleOffsets[]= {1.90,1.45, 1.10,1.00};
-
-  int fDefaultFont=132;
-
-  int fNDivisions=508;
-  int fNDivisions2=506;
-
-  TObjArray *fFileArray;
-  TObjArray *fACanvasArray;
 }; 
 
 void ejungwoo::v(int verbose=1) { fVerbose=verbose; }
@@ -1566,8 +1580,21 @@ void ejungwoo::add(TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t
   addto(0,obj, opt, type0, type1, type2, type3);
 }
 void ejungwoo::addto(acanvas *acvs, TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
+  if (opt.Index(";")>=0 && obj->InheritsFrom("TNamed")) {
+    TObjArray *tokens=opt.Tokenize(";");
+    if (tokens->GetEntries()==2) {
+      TString name=((TObjString *) tokens -> At(0)) -> GetString();
+      ((TNamed *)obj)->SetName(name);
+      opt = ((TObjString *)tokens->At(1))->GetString();
+    }
+    else if (opt.EndsWith(";")) {
+      opt.Resize(opt.Sizeof()-2);
+      TString name=opt;
+      ((TNamed *)obj)->SetName(name);
+      opt="";
+    }
+  }
   acvs->add(obj, opt, type0, type1, type2, type3);
-  if(fVerbose>0) std::cout<<"Drawing "<<obj->GetName()<<" to "<<acvs->GetName()<<std::endl;
   return;
 }
 void ejungwoo::addto(int i, TObject *obj, TString opt, Bool_t type0, Bool_t type1, Bool_t type2, Bool_t type3) {
