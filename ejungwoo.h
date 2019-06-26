@@ -12,6 +12,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 #include "TF1.h"
 #include "TH1.h"
@@ -35,23 +37,21 @@ namespace ejungwoo
 {
     bool fSave=true;
     bool fWrite=true;
+    bool fDraw=true;
      int fVerbose=1;
      int fVerboseG=0;
      int fGbOption=0;
      int fDefaultMake=1;
     bool fDarkMode=false;
 
-     int fNumColors=27;
+     int fNumColors=28;
+
  Color_t fColorList[] = {
-   kBlue-4,   kBlue,     kBlue+1,   kAzure+7,
-   kRed-4,    kRed,      kRed+1,
-   kPink-2,   kPink+7,   kPink+3,
-   kSpring+7, kSpring-5, kSpring-6,
-   kCyan+1,   kCyan+2,   kCyan+3,
-   kYellow,
-   kOrange,   kOrange-3, kOrange+8, kOrange+6, kOrange-4,
-   kTeal+5,   kTeal+3,
-   kViolet-5, kViolet-6, kViolet+4};
+   kOrange-4, kOrange+6, kOrange+8, kOrange-3, kOrange, kYellow,
+   kSpring+8, kSpring+7, kSpring-5, kTeal+5, kSpring-6, kTeal+3, kCyan+3, kCyan+2, kCyan+1,
+   kAzure+7, kBlue-4, kBlue, kBlue+1, kViolet+4, kViolet-6, kViolet-5,
+   kPink+3, kRed+1, kRed, kRed-4, kPink-2, kPink+7,
+ };
 
  TFile *fSaveGFile=nullptr;
 
@@ -106,6 +106,8 @@ namespace ejungwoo
 
   TObjArray *fFileArray;
   TObjArray *fACanvasArray;
+
+  std::ifstream fIfStream;
 
 
   /********************************************************/
@@ -286,6 +288,9 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
       }
 
       TCanvas *draw(TString opt="cvs") {
+        if (!ejungwoo::fDraw)
+          return (TCanvas *) nullptr;
+
         if (opt.Index("cvs")>=0) {
           opt.ReplaceAll("cvs","");
           TCanvas *cvs = nullptr;
@@ -304,16 +309,32 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
         }
 
         Draw(opt);
-        return (TCanvas *) gPad;
+        return make((TCanvas *) gPad);
       }
 
       Int_t fFrameType = 0;
   };
 
+  /**
+   * add drawing object (TH1*, TF1, TGraph, TText, TLine, TLegend, etc.)
+   * to acanvas. One acanvas is created by defualt
+   * in case non of [i], [name], [acv] is not set.
+   *
+   * @param i     add the object to the i'th acanvas
+   * @param name  add the object to the acanvas having name [name]
+   * @param acv   add the object to the acanvas pointer *acv
+   * @param obj   The drawing object to be added.
+   * @param opt   The option used when drawing (by draw())
+   * @param type  type set for various set of drawing
+   */
   void add(                TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
   void addto(int i,        TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
   void addto(TString name, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
   void addto(acanvas *acv, TObject *obj, TString opt="", Bool_t type0=0, Bool_t type1=0, Bool_t type2=0, Bool_t type3=0);
+
+  void fdraw(bool val);
+
+  /// draw objects in acanvas collected by add()/addto().
   void draw(int i,TString opt="cvs");
   void draw(TString name,TString opt="cvs");
   void draw(const char* opt="cvs") { draw(0,opt); }
@@ -427,6 +448,14 @@ TGraphErrors *make (TGraphErrors *gr); ///< make error graph stylish!,       jum
   Double_t fwrm(TH1 *h, Double_t ratio, Double_t ndx, Double_t &x0, Double_t &x1, Double_t &q); ///< full width [ratio] maximum : return width of histogram at y which the data becomes [ratio] of maximum (ratio*maximum)
   Double_t fwhm(TH1 *h, Double_t &x0, Double_t &x1, Double_t &q); ///< FWHM(Full Width Half Maximum) of histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
   Double_t fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
+
+  std::ifstream& ofile(TString name);
+  TString readline(std::ifstream&);
+  TString readline();
+  void cfile();
+
+  TObjArray *csv(TString line);
+  TString da(TObjArray *line, Int_t i);
 
   void pfname(TString str, TString &pathname, TString &filename, TString delim="/"); ///< get pathname=[path-name], filename=[file-name] after tonizing with delim
   TString firstname(TString str, TString delim="."); ///< get first name
@@ -1087,7 +1116,7 @@ TF1 *ejungwoo::settitle(TF1 *f, TString title)
   return f;
 }
 
-TGraphErrors *tograph(TString filename)
+TGraphErrors *ejungwoo::tograph(TString filename)
 {
   //TODO
   std::ifstream file(filename);
@@ -1621,6 +1650,14 @@ void ejungwoo::addto(TString name, TObject *obj, TString opt, Bool_t type0, Bool
 
   addto(acvs, obj, opt, type0, type1, type2, type3);
 }
+
+void ejungwoo::fdraw(bool val) {
+  fDraw=val;
+  if(fVerbose>0) {
+    if(fDraw) std::cout<<"fDraw=true; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<std::endl;
+    else      std::cout<<"fDraw=false; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<std::endl;
+  }
+}
 void ejungwoo::draw(int i,TString opt) {
   auto acvs=(acanvas*)fACanvasArray->At(i);
   if(acvs!=nullptr)
@@ -1976,6 +2013,33 @@ TH1 *ejungwoo::inv(TH1 *h) {
         hnew->Fill(y,x);
     }
   return make(fDefaultMake,(TH1 *)hnew);
+}
+
+std::ifstream& ejungwoo::ofile(TString name) {
+  fIfStream.open(name);
+  return fIfStream;
+}
+
+TString ejungwoo::readline(std::ifstream& infile) {
+  std::string line;
+  std::getline(infile, line);
+  return TString(line);
+}
+
+TString ejungwoo::readline() {
+  return readline(fIfStream);
+}
+
+void ejungwoo::cfile() {
+  fIfStream.close();
+}
+
+TObjArray *ejungwoo::csv(TString line) {
+  return line.Tokenize(",");
+}
+
+TString ejungwoo::da(TObjArray *line, Int_t i) {
+  return ((TObjString *) line->At(i))->GetString();
 }
 
 void ejungwoo::pfname(TString str, TString &pathname, TString &filename, TString delim="/") {
