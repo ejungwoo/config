@@ -30,7 +30,11 @@
 #include "TObjString.h"
 
 /**
- * @todo
+ * @todo change global method to start with 'g'
+ * @todo change histogram method to start with 'h'
+ * @todo change creation method to start with 'c'
+ * @todo change showing method to start with 's'
+ * @todo change class to start with 't'
  */
 
 namespace ejungwoo
@@ -77,7 +81,7 @@ namespace ejungwoo
 
  TString fVersion="";
  TString fFigDirName="figures";
- TString fDataPath="";
+ TString fDataDirName="data";
 
      int fICvs=0;
      int fIHist=0;
@@ -100,10 +104,6 @@ namespace ejungwoo
   double fWDefault2=0.18;
   double fWUnit2=0.009;
   double fHUnit2=0.06;
-
-  //double fWDefault2=0.2;
-  //double fWUnit2=0.010;
-  //double fHUnit2=0.07;
 
   double fWStat=0.30;
   double fHStat=0.25;
@@ -164,7 +164,7 @@ namespace ejungwoo
    *   - 0: silent (default)
    *   - 1: draw all fit histograms
   */
-  void g(int graphic=1);
+  void gverboseG(int graphic=1);
 
   /*
    * Global option fGbOption used in tp method
@@ -174,9 +174,9 @@ namespace ejungwoo
    *   - 1: draw objects created in method tp()
    *   - 2: draw and save objects created in method tp()
   */
-  void o(int goption=1);
+  void goption(int goption=1);
 
-  void dark(bool dm = true); ///< dark mode (drawing)
+  void gdark(bool dm = true); ///< dark mode (drawing)
 
   TFile *gfile(TString filename); ///< save graphic if fVerboseG>1
 
@@ -281,6 +281,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
 
   TGraph *sumf(std::vector<TF1*> &fs); ///< TODO create TF1 which is sum of TF1s in fs;
 
+  TF1 *fitg (TF1 *f1, TH1 *h, double c=2.5, Option_t *opt="RQ0");
   TF1 *fitg (TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitgg(TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitng(int n, TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
@@ -552,7 +553,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * @param c fit will perform in range of -c*sigma ~ c*sigma
    * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
    *
-   * the histograms are written to fSaveGFile is g(2) is used,
+   * the histograms are written to fSaveGFile is gverboseG(2) is used,
    * fSaveGFile can be set by gfile(name) method.
    */
   TObjArray *fitgsx_list(TH1 *hist, int nDivision=20, double c=1.5, int entry_cut=1000);
@@ -564,7 +565,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * @param c fit will perform in range of -c*sigma ~ c*sigma
    * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
    *
-   * the histograms are written to fSaveGFile is g(2) is used,
+   * the histograms are written to fSaveGFile is gverboseG(2) is used,
    * fSaveGFile can be set by gfile(name) method.
    */
   TObjArray *fitgsy_list(TH1 *hist, int nDivision=20, double c=1.5, int entry_cut=1000);
@@ -608,7 +609,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    */
   TGraphErrors *fitgsy(TH1 *hist, int nDivision=20, double c=1.5, int entry_cut=1000, bool error_graph = false);
 
-  void gdata(TString path) { fDataPath=path; }
+  void gdata(TString path) { fDataDirName=path; }
   TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0);
   TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); }
 
@@ -623,9 +624,9 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * return array of histograms with applied cut
    *
    * cuts are used to create several histograms
-   * using global "g" verbose to
-   * - g(1) : draw histograms with applied cut
-   * - g(2) : draw histograms with applied cut and save in .pdf
+   * using global "gverboseG" verbose to
+   * - gverboseG(1) : draw histograms with applied cut
+   * - gverboseG(2) : draw histograms with applied cut and save in .pdf
    *
    * jumpto_tp4
    */
@@ -635,9 +636,9 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * return array of histograms with applied cut
    *
    * cuts are used to create several histograms
-   * using global "g" verbose to
-   * - g(1) : draw histograms with applied cut
-   * - g(2) : draw histograms with applied cut and save in .pdf
+   * using global "gverboseG" verbose to
+   * - gverboseG(1) : draw histograms with applied cut
+   * - gverboseG(2) : draw histograms with applied cut and save in .pdf
    *
    * jumpto_tp5
    */
@@ -715,7 +716,7 @@ void ejungwoo::gvmark(TString vmtext) {
 
 TText *ejungwoo::getvmark(bool dodraw, TString vmtext) {
   TString text;
-  TText *ttVMark = nullptr;
+  TLatex *ttVMark = nullptr;
 
   if (!vmtext.IsNull())
     text = vmtext;
@@ -724,13 +725,17 @@ TText *ejungwoo::getvmark(bool dodraw, TString vmtext) {
   else
     return ttVMark;
 
-  ttVMark = new TText();
+  ttVMark = new TLatex();
   ttVMark->SetTextColor(colori(27));
-  ttVMark->SetTextAlign(11);
   ttVMark->SetTextSize(0.04);
   ttVMark->SetTextFont(132);
-  ttVMark->SetText(0.+fLMargin,1.-fTMargin+0.01,text);
   ttVMark->SetNDC();
+
+  //ttVMark->SetTextAlign(11);
+  //ttVMark->SetText(0.+fLMargin,1.-fTMargin+0.01,text);
+
+  ttVMark->SetTextAlign(31);
+  ttVMark->SetText(1-fRMargin,1.-fTMargin+0.01,text);
 
   if (dodraw)
     ttVMark->Draw();
@@ -754,10 +759,10 @@ TString ejungwoo::makename(const char *name){
 }
 
 void ejungwoo::gverbose(int verbose=1) { fVerbose=verbose; }
-void ejungwoo::g(int verbose=1) { fVerboseG=verbose; }
-void ejungwoo::o(int goption=1) { fGbOption=goption; }
+void ejungwoo::gverboseG(int verbose=1) { fVerboseG=verbose; }
+void ejungwoo::goption(int goption=1) { fGbOption=goption; }
 
-void ejungwoo::dark(bool dm = true) { fDarkMode = dm; }
+void ejungwoo::gdark(bool dm = true) { fDarkMode = dm; }
 
 void ejungwoo::gstat(int opt) {
   gStyle->SetOptStat(opt);
@@ -1305,7 +1310,8 @@ TCanvas *ejungwoo::make(TCanvas *cvs,TString vmtext) { //jumpto_makec
           auto y1=0.+mgBottom; auto y2=1.-mgTop; auto dy=y2-y1;
           auto numLines=statsbox->GetListOfLines()->GetEntries();
           double xratio, yratio;
-               if (numLines<5)  { xratio = 0.300; yratio=0.05*numLines; }
+
+               if (numLines<9)  { xratio = 0.400; yratio=0.06*numLines; }
           else if (numLines<15) { xratio = 0.325; yratio=0.04*numLines; }
           else if (numLines<20) { xratio = 0.350; yratio=0.03*numLines; }
           else                  { xratio = 0.375; yratio=0.6;           }
@@ -1535,7 +1541,7 @@ TPaveText *ejungwoo::make(TPaveText *pave) { //jumpto_makep
     auto l=TString(text->GetTitle()).Length();
     if(lmax<l) lmax=l;
   }
-  
+
   auto y1=y2-pave->GetSize()*fHUnit;
   auto x2=1.-fRMargin;
   auto x1=x2-lmax*fWUnit - fWDefault;
@@ -1549,6 +1555,7 @@ TPaveText *ejungwoo::make(TPaveText *pave) { //jumpto_makep
   pave->SetFillStyle(0);
   pave->SetBorderSize(0);
   pave->SetTextFont(fDefaultFont);
+
   return pave;
 }
 
@@ -1764,6 +1771,9 @@ int ejungwoo::pdg_idx(int pdg)
 void ejungwoo::gversion(TString val) {
   fVersion = val;
   if(fVerbose>0) std::cout<<"fVersion=["<<fVersion<<"]"<<std::endl;
+
+  fFigDirName = "figures_"+fVersion;
+  fDataDirName = "data_"+fVersion;
 }
 
 TString ejungwoo::version() { return fVersion; }
@@ -1807,7 +1817,7 @@ void ejungwoo::save(TCanvas *cvs, TString format, bool version_control) {
   TString name=cvs->GetName();
   TString full_name=name+"."+format;
   if(!fVersion.IsNull()) {
-    full_name=name+"."+fVersion+"."+format;
+    full_name=name+"__"+fVersion+"."+format;
     cvs->SaveAs(path+full_name);
     return;
   }
@@ -1829,7 +1839,7 @@ void ejungwoo::save(TString name, TCanvas *cvs, TString format, bool version_con
   gSystem->Exec(TString("mkdir -p ")+path);
   TString full_name=name+"."+format;
   if(!fVersion.IsNull()) {
-    full_name=name+"."+fVersion+"."+format;
+    full_name=name+"__"+fVersion+"."+format;
     cvs->SaveAs(path+full_name);
     return;
   }
@@ -1934,6 +1944,39 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
   }
 }
 
+
+TF1 *ejungwoo::fitg(TF1 *f, TH1 *h,double c,Option_t *opt) {
+  if(fVerbose>1) {
+    if(!TString(opt).IsNull()) std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
+    else                       std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
+  }
+  //auto binmax=h->GetMaximumBin();
+  //auto max=h->GetBinContent(binmax);
+  //auto xmax=h->GetXaxis()->GetBinCenter(binmax);
+  //auto xerr=h->GetStdDev();
+  auto max=f->GetParameter(0);
+  auto xmax=f->GetParameter(1);
+  auto xerr=f->GetParameter(2);
+  //auto f=new TF1(Form("%s_fitg",h->GetName()),"gaus(0)",xmax-xerr*c,xmax+xerr*c);
+  //f->SetParameters(max,xmax,xerr);
+  h->Fit(f,opt);
+  xmax=f->GetParameter(1);
+  xerr=f->GetParameter(2);
+
+  int fitcount = 1;
+  double xerr2 = 0.;
+  while (fitcount<20&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
+    xerr2=xerr;
+    f->SetRange(xmax-c*xerr2,xmax+c*xerr2);
+    h->Fit(f,opt);
+    xmax=f->GetParameter(1);
+    xerr=f->GetParameter(2);
+    ++fitcount;
+  }
+
+  if(fVerbose>1)std::cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<std::endl;
+  return f;
+}
 
 TF1 *ejungwoo::fitg(TH1 *h,double c,Option_t *opt) {
   if(fVerbose>1) {
@@ -2485,9 +2528,9 @@ TChain *ejungwoo::chain(TString treename, TString filename, int from=0, int to=0
       if (!good)
         continue;
       TString filenamei = filename;
-      if (!fDataPath.IsNull()) {
+      if (!fDataDirName.IsNull()) {
         if (filenamei[0]!='/'||filenamei[0]!='~'||filenamei[0]!='.')
-          filenamei = fDataPath + "/" + filenamei;
+          filenamei = fDataDirName + "/" + filenamei;
       }
       filenamei.ReplaceAll("IDX",TString::Itoa(i,10));
       if(fVerbose>0)std::cout<<"       ++ "<<filenamei<<std::endl;
@@ -2599,10 +2642,12 @@ TH1 *ejungwoo::cutg(TH1 *h, TCutG *cut) {
       auto x=h2->GetXaxis()->GetBinCenter(binx);
       auto y=h2->GetYaxis()->GetBinCenter(biny);
       if(cut->IsInside(x,y)==1) {
-        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
         int n=h2->GetBinContent(binx,biny);
-        for (auto i=0;i<n;++i)
-          hnew->Fill(x,y);
+        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
+        if (n<1)
+          hnew->Fill(x,y,h2->GetBinContent(binx,biny));
+        else
+          for (auto i=0;i<int(n);++i) hnew->Fill(x,y);
       }
     }
   }
@@ -2620,10 +2665,12 @@ TH1 *ejungwoo::cutg_or(TH1 *h, TCutG *cut, TCutG *orcut) {
       auto x=h2->GetXaxis()->GetBinCenter(binx);
       auto y=h2->GetYaxis()->GetBinCenter(biny);
       if(cut->IsInside(x,y)==1 || orcut->IsInside(x,y)) {
-        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
         int n=h2->GetBinContent(binx,biny);
-        for (auto i=0;i<n;++i)
-          hnew->Fill(x,y);
+        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
+        if (n<1)
+          hnew->Fill(x,y,h2->GetBinContent(binx,biny));
+        else
+          for (auto i=0;i<int(n);++i) hnew->Fill(x,y);
       }
     }
   }
@@ -2641,10 +2688,12 @@ TH1 *ejungwoo::cutg_and(TH1 *h, TCutG *cut, TCutG *andcut) {
       auto x=h2->GetXaxis()->GetBinCenter(binx);
       auto y=h2->GetYaxis()->GetBinCenter(biny);
       if(cut->IsInside(x,y)==1 && andcut->IsInside(x,y)) {
-        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
         int n=h2->GetBinContent(binx,biny);
-        for (auto i=0;i<n;++i)
-          hnew->Fill(x,y);
+        //hnew->SetBinContent(binx,biny,h2->GetBinContent(binx,biny));
+        if (n<1)
+          hnew->Fill(x,y,h2->GetBinContent(binx,biny));
+        else
+          for (auto i=0;i<int(n);++i) hnew->Fill(x,y);
       }
     }
   }
