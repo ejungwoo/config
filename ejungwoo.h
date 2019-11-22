@@ -610,7 +610,6 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    */
   TGraphErrors *fitgsy(TH1 *hist, int nDivision=20, double c=1.5, int entry_cut=1000, bool error_graph = false);
 
-  void gdata(TString path) { fDataDirName=path; }
   TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0);
   TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); }
 
@@ -692,6 +691,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
   TString firstname(TString str, TString delim="."); ///< get first name
   TString lastname(TString str, TString delim="/"); ///< get last name
   TString justname(TString str); ///< get name with no path and format. just name
+  TString toname(TString str);
 
   /********************************************************/
 
@@ -760,10 +760,6 @@ TString ejungwoo::makename(TString name) {
     if (!name.EndsWith(fFooter)) name = name + fFooter;
   }
   return name;
-}
-
-TString ejungwoo::makename(const char *name){
-  return makename(TString(name));
 }
 
 void ejungwoo::gverbose(int verbose=1) { fVerbose=verbose; }
@@ -2379,8 +2375,8 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int nDivision, double c, int entry_c
     hd->sigx=x2-x1;
     hd->y=f1->GetParameter(1);
     hd->sigy=f1->GetParameter(2);
-    hd->dy=f1->GetParameter(2);
-    hd->ddy=f1->GetParError(2);
+    //hd->dy=f1->GetParameter(2);
+    //hd->ddy=f1->GetParError(2);
     if(fVerbose>1)
       hd->print();
   }
