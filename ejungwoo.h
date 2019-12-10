@@ -90,10 +90,12 @@ namespace ejungwoo
      int fWC2=600;
      int fWC3=680;
      int fHC3=550;
-     int fWCC2=900;
+     int fWCC2=770;
      int fHCC2=550;
-     int fWCC3=1200;
-     int fHCC3=800;
+     int fWCC3=900;
+     int fHCC3=550;
+     int fWCC4=1200;
+     int fHCC4=800;
 
      int fYCvs=0;
 
@@ -123,6 +125,8 @@ namespace ejungwoo
   double fZAxisLabelSizes[]={0.030, 0.035, 0.05 , 0.06};
   double fXTitleOffsets[] = {1.30 , 1.15 , 0.80 , 0.80};
   double fYTitleOffsets[] = {1.90 , 1.45 , 1.10 , 1.00};
+
+  int fFillStylePave=0;
 
   int fDefaultFont=132;
 
@@ -229,7 +233,9 @@ namespace ejungwoo
 TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< make error graph stylish!,       jumpto_makege
          TF1 *make (TF1 *f);           ///< make function stylish!,          jumpto_makef
 
-         TH1 *make (int s, TH1 *h);  ///< make histogram stylish! (s)bigger!, jumpto_maken
+       TText *make (TText *tt, Short_t a=22);
+
+         TH1 *make (int s, TH1 *h, double xc=1., double yc=1.);  ///< make histogram stylish! (s)bigger!, jumpto_maken
          TH1 *make (TH1 *h);           ///< make histogram stylish!,          jumpto_makeh
          TH1 *make2(TH1 *h);           ///< make histogram stylish! bigger!,  jumpto_makeh2
 
@@ -288,6 +294,8 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
   TF1 *fitgg(TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitng(int n, TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1    *gg(TF1 *f, int i); ///< get i'th gaussian from multipule gaussian function f1
+
+  TObjArray *infog(TF1 *f);
 
   void drawgg(TF1 *f, Option_t *opt="samel"); ///< Draw n-gaussian separately
 
@@ -389,7 +397,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
         TObjArray::Add(dro);
       }
 
-      TCanvas *draw(TString opt="cvs") {
+      TCanvas *drawc(TString opt="cvs") {
         if (!ejungwoo::fDraw)
           return (TCanvas *) nullptr;
 
@@ -473,7 +481,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * in case non of [i], [name], [acv] is not set.
    *
    * @param obj   The drawing object to be added.
-   * @param opt   The option used when drawing (by draw())
+   * @param opt   The option used when drawing (by drawc())
    * @param type0 set true if this object should be shown by drawing type0
    * @param type1 set true if this object should be shown by drawing type1
    * @param type2 set true if this object should be shown by drawing type2
@@ -486,7 +494,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    * to new acanvas. New acanvas is created by with next index of acanvas array.
    *
    * @param obj   The drawing object to be added.
-   * @param opt   The option used when drawing (by draw())
+   * @param opt   The option used when drawing (by drawc())
    * @param type0 set true if this object should be shown by drawing type0
    * @param type1 set true if this object should be shown by drawing type1
    * @param type2 set true if this object should be shown by drawing type2
@@ -499,7 +507,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    *
    * @param i     add the object to the i'th acanvas
    * @param obj   The drawing object to be added.
-   * @param opt   The option used when drawing (by draw())
+   * @param opt   The option used when drawing (by drawc())
    * @param type0 set true if this object should be shown by drawing type0
    * @param type1 set true if this object should be shown by drawing type1
    * @param type2 set true if this object should be shown by drawing type2
@@ -512,7 +520,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    *
    * @param name  add the object to the acanvas having name [name]
    * @param obj   The drawing object to be added.
-   * @param opt   The option used when drawing (by draw())
+   * @param opt   The option used when drawing (by drawc())
    * @param type0 set true if this object should be shown by drawing type0
    * @param type1 set true if this object should be shown by drawing type1
    * @param type2 set true if this object should be shown by drawing type2
@@ -525,7 +533,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    *
    * @param acv   add the object to the acanvas pointer *acv
    * @param obj   The drawing object to be added.
-   * @param opt   The option used when drawing (by draw())
+   * @param opt   The option used when drawing (by drawc())
    * @param type0 set true if this object should be shown by drawing type0
    * @param type1 set true if this object should be shown by drawing type1
    * @param type2 set true if this object should be shown by drawing type2
@@ -537,11 +545,11 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
   void clearc(int i=0); ///< clear acanvas of index i
   void clearc(TString name); ///< clear acanvas of name name
 
-  void fdraw(bool val); ///< set draw flag of drawing acanvas using method draw()
+  void gdraw(bool val); ///< set drawc flag of drawing acanvas using method drawc()
 
-  TCanvas *draw(int i,TString opt="cvs"); ///< draw objects in acanvas of index i collected by add()/addto().
-  TCanvas *draw(TString name,TString opt="cvs"); ///< draw objects in acanvas of name name collected by add()/addto().
-  TCanvas *draw(const char* opt="cvs") { return draw(0,opt); } ///< draw objects in acanvas of index o collected by add()/addto().
+  TCanvas *drawc(int i,TString opt="cvs"); ///< draw objects in acanvas of index i collected by add()/addto().
+  TCanvas *drawc(TString name,TString opt="cvs"); ///< draw objects in acanvas of name name collected by add()/addto().
+  TCanvas *drawc(const char* opt="cvs") { return drawc(0,opt); } ///< draw objects in acanvas of index o collected by add()/addto().
   void drawall();
   void saveall(TString opt="pdf");
 
@@ -700,6 +708,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
 
   void cutt(double r=0.04); ///< cut top margin to r=(0.04)
   void cutr(double r=0.02); ///< cut right margin to r=(0.02)
+  void cutl(double r=0.02); ///< cut right margin to r=(0.02)
   void cuttr(double r=0.02); ///< cut right margin to r=(0.02)
   void cutall(double r=0.02); ///< cut all margin to r=(0.02)
 
@@ -730,7 +739,7 @@ TText *ejungwoo::getvmark(bool dodraw, TString vmtext) {
   ttVMark->SetTextColor(colori(27));
   ttVMark->SetTextAlign(11);
   ttVMark->SetTextSize(0.04);
-  ttVMark->SetTextFont(132);
+  ttVMark->SetTextFont(fDefaultFont);
   ttVMark->SetText(0.+fLMargin,1.-fTMargin+0.01,text);
   ttVMark->SetNDC();
 
@@ -1092,6 +1101,7 @@ double ejungwoo::fwhm(TH1 *h)
 
 void ejungwoo::cutt(double r) { fTMargin = r; }
 void ejungwoo::cutr(double r) { fRMarginH1 = r; fRMarginH2 = r; }
+void ejungwoo::cutl(double r) { fLMargin = r; }
 void ejungwoo::cuttr(double r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
 void ejungwoo::cutall(double r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
 
@@ -1150,8 +1160,8 @@ TCanvas *ejungwoo::cv3(TString name,double w,double h,TString logs) {
 TCanvas *ejungwoo::cc3(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
-  if(w==0) w=fWCC2;
-  if(h==0) h=fHCC2;
+  if(w==0) w=fWCC3;
+  if(h==0) h=fHCC3;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   name = makename(name);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
@@ -1162,8 +1172,8 @@ TCanvas *ejungwoo::cc3(TString name,double w,double h,TString logs) {
 TCanvas *ejungwoo::cc4(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
-  if(w==0) w=fWCC3;
-  if(h==0) h=fHCC3;
+  if(w==0) w=fWCC4;
+  if(h==0) h=fHCC4;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   name = makename(name);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
@@ -1186,8 +1196,8 @@ TCanvas *ejungwoo::cc1(TString name,double w,double h,TString logs) {
 TCanvas *ejungwoo::cc2(TString name,double w,double h,TString logs) {
   fRMargin=fRMarginH2;
   init();
-  if(w==0) w=fWC3;
-  if(h==0) h=fHC3;
+  if(w==0) w=fWCC2;
+  if(h==0) h=fHCC2;
   if(name.IsNull()) name=Form("canvas-%d",fICvs);
   name = makename(name);
   auto cvs=new TCanvas(name,name,(fICvs+1)*20,(fICvs+1)*20+fYCvs,w,h);
@@ -1282,6 +1292,14 @@ TObject *ejungwoo::make(TObject *ob) { //jumpto_makeo
   if(ob->InheritsFrom("TPaveText")) make((TLegend*)ob);
   if(ob->InheritsFrom("TCanvas")) make((TCanvas*)ob);
   return ob;
+}
+
+TText *ejungwoo::make (TText *tt, Short_t a)
+{
+  tt->SetTextAlign(a);
+  tt->SetTextSize(0.05);
+  tt->SetTextFont(fDefaultFont);
+  return tt;
 }
 
 TCanvas *ejungwoo::make(TCanvas *cvs,TString vmtext) { //jumpto_makec
@@ -1412,18 +1430,22 @@ TGraphErrors *ejungwoo::make(TGraphErrors *graph, int mi, float ms, int mc) //ju
   return (TGraphErrors *) make((TGraph *) graph, mi, ms, mc);
 }
 
-TH1 *ejungwoo::make(int s, TH1 *h) { //jumpto_maken
+TH1 *ejungwoo::make(int s, TH1 *h, double xc, double yc) { //jumpto_maken
   init();
+  h->SetLabelOffset(xc*0.005,"X");
+  h->SetLabelOffset(yc*0.005,"Y");
+
   h->GetXaxis()->CenterTitle();
-  h->GetXaxis()->SetTitleOffset(fXTitleOffsets[s]);
+  h->GetXaxis()->SetTitleOffset(xc*fXTitleOffsets[s]);
   h->GetXaxis()->SetTitleSize(fAxisTitleSizes[s]);
   h->GetXaxis()->SetLabelSize(fAxisLabelSizes[s]);
+
   h->GetYaxis()->CenterTitle();
-  h->GetYaxis()->SetTitleOffset(fYTitleOffsets[s]);
+  h->GetYaxis()->SetTitleOffset(yc*fYTitleOffsets[s]);
   h->GetYaxis()->SetTitleSize(fAxisTitleSizes[s]);
   h->GetYaxis()->SetLabelSize(fAxisLabelSizes[s]);
+
   h->GetZaxis()->CenterTitle();
-  //h->GetZaxis()->SetTitleOffset(fYTitleOffsets[s]);
   h->GetZaxis()->SetTitleSize(fAxisTitleSizes[s]);
   h->GetZaxis()->SetLabelSize(fZAxisLabelSizes[s]);
 
@@ -1464,7 +1486,7 @@ TLegend *ejungwoo::makel(TLegend *legend, double dx, double dy) { //jumpto_makel
   if(y2<0.2)
     y2=0.2;
   legend->SetY2(y2+dy);
-  legend->SetFillStyle(0);
+  legend->SetFillStyle(fFillStylePave);
   legend->SetBorderSize(0);
   legend->SetTextFont(fDefaultFont);
   return legend;
@@ -1507,7 +1529,7 @@ TLegend *ejungwoo::make(TLegend *legend, double dx, double dy) { //jumpto_makel
   if(y2<0.2)
     y2=0.2;
   legend->SetY2(y2+dy);
-  legend->SetFillStyle(0);
+  legend->SetFillStyle(fFillStylePave);
   legend->SetBorderSize(0);
   legend->SetTextFont(fDefaultFont);
   return legend;
@@ -1535,7 +1557,7 @@ TLegend *ejungwoo::make2(TLegend *legend, double dx, double dy) { //jumpto_makel
   if(y2<0.2)
     y2=0.2;
   legend->SetY2(y2+dy);
-  legend->SetFillStyle(0);
+  legend->SetFillStyle(fFillStylePave);
   legend->SetBorderSize(0);
   legend->SetTextFont(fDefaultFont);
   return legend;
@@ -1563,7 +1585,7 @@ TPaveText *ejungwoo::make(TPaveText *pave) { //jumpto_makep
   if(y2<0.2)
     y2=0.2;
   pave->SetY2(y2);
-  pave->SetFillStyle(0);
+  pave->SetFillStyle(fFillStylePave);
   pave->SetBorderSize(0);
   pave->SetTextFont(fDefaultFont);
 
@@ -1956,6 +1978,46 @@ void ejungwoo::write(TString name, TNamed *obj, bool version_control = true){
   }
 }
 
+TObjArray *ejungwoo::infog(TF1 *f)
+{
+  auto array = new TObjArray();
+
+  auto a = f -> GetParameter(0);
+  auto m = f -> GetParameter(1);
+  auto s = f -> GetParameter(2);
+
+  Double_t x1, x2;
+  f -> GetRange(x1, x2);
+
+  auto fc = (TF1 *) f->Clone();
+  fc -> SetRange(m-3*s,m+3*s);
+  fc -> SetLineColor(kRed);
+  fc -> SetDrawOption("samel");
+  array -> Add(fc);
+
+  auto y1 = fc -> Eval(x1);
+  auto lrange = new TArrow(x1,y1,x2,y1,0.05,"<>");
+  lrange -> SetLineColor(kGray+1);
+  lrange -> SetDrawOption("samel");
+  array -> Add(lrange);
+
+  for (auto c : {1,2,3}) {
+    auto ac = fc->Eval(m-c*s);
+    auto l1 = new TLine(m-c*s,0,m-c*s,ac);
+    auto l2 = new TLine(m+c*s,0,m+c*s,ac);
+    l1 -> SetLineColor(kRed);
+    l2 -> SetLineColor(kRed);
+    l1 -> SetLineStyle(2);
+    l2 -> SetLineStyle(2);
+    l1 -> SetDrawOption("samel");
+    l2 -> SetDrawOption("samel");
+
+    array -> Add(l1);
+    array -> Add(l2);
+  }
+
+  return array;
+}
 
 TF1 *ejungwoo::fitg(TF1 *f, TH1 *h,double c,Option_t *opt) {
   if(fVerbose>1) {
@@ -2300,23 +2362,23 @@ void ejungwoo::clearc(TString name) {
   acvs->Clear();
 }
 
-void ejungwoo::fdraw(bool val) {
+void ejungwoo::gdraw(bool val) {
   fDraw=val;
   if(fVerbose>0) {
     if(fDraw) std::cout<<"fDraw=true; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<std::endl;
     else      std::cout<<"fDraw=false; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<std::endl;
   }
 }
-TCanvas *ejungwoo::draw(int i,TString opt) {
+TCanvas *ejungwoo::drawc(int i,TString opt) {
   auto acvs=(acanvas*)fACanvasArray->At(i);
   if(acvs!=nullptr)
-    return acvs->draw(opt);
+    return acvs->drawc(opt);
   return (TCanvas *) nullptr;
 }
-TCanvas *ejungwoo::draw(TString name,TString opt) {
+TCanvas *ejungwoo::drawc(TString name,TString opt) {
   auto acvs=(acanvas*)fACanvasArray->FindObject(name);
   if(acvs!=nullptr)
-    return acvs->draw(opt);
+    return acvs->drawc(opt);
   return (TCanvas *) nullptr;
 }
 
@@ -2325,7 +2387,7 @@ void ejungwoo::drawall() {
   auto navcvs = fACanvasArray->GetEntries();
   for(auto iacvs=0;iacvs<navcvs;++iacvs) {
     auto acvs=(acanvas*)fACanvasArray->At(iacvs);
-    acvs->draw();
+    acvs->drawc();
   }
 }
 
