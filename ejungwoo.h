@@ -625,6 +625,8 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
    */
   TGraphErrors *fitgsy(TH1 *hist, int nDivision=20, double c=1.5, int entry_cut=1000, bool error_graph = false);
 
+  TChain *chain(TChain *c, TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0);
+
   TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0);
   TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); }
 
@@ -2617,6 +2619,42 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
   if(ny==-1)ny=200;
   if(formula.Index(":")>=0) return tp(tree,formula,cut,name,title,nx,0,0,ny,-1,-1);
   else                      return tp(tree,formula,cut,name,title,nx,0,0,-1,-1,-1);
+}
+
+TChain *ejungwoo::chain(TChain *c, TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0)
+{
+  if(fVerbose>0) {
+    TString message = Form("%s",filename.Data());
+    TString ms_range = Form("[%d-%d",from,to);
+    for(auto irm=0;irm<numrm;++irm)
+      ms_range = ms_range + TString(Form(",x%d",rmlist[irm]));
+    ms_range = ms_range + "]";
+    message.ReplaceAll("IDX",ms_range);
+    std::cout<<"chain: "<<message<<std::endl;
+  }
+  if (filename.Index("IDX")>=0)
+    for(auto i=from;i<=to;++i) {
+      bool good = true;
+      for(auto irm=0;irm<numrm;++irm) {
+        if (i==rmlist[irm]) {
+          good = false;
+          break;
+        }
+      }
+      if (!good)
+        continue;
+      TString filenamei = filename;
+      if (!fDataDirName.IsNull()) {
+        //if (filenamei[0]!='/'||filenamei[0]!='~'||filenamei[0]!='.')
+        if (0)
+          filenamei = fDataDirName + "/" + filenamei;
+      }
+      filenamei.ReplaceAll("IDX",TString::Itoa(i,10));
+      if(fVerbose>0)std::cout<<"       ++ "<<filenamei<<std::endl;
+      c->Add(filenamei);
+    }
+  else c->Add(filename);
+  return c;
 }
 
 TChain *ejungwoo::chain(TString treename, TString filename, int from=0, int to=0, int *rmlist, int numrm) {
