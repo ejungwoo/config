@@ -120,14 +120,20 @@ namespace ejungwoo
   double fRMarginH2=0.155;
 
   double fMainTitleSize=0.08;
-  double fAxisTitleSizes[] ={0.05 ,  0.065, 0.075, 0.09, 0.11};
+  //double fAxisTitleSizes[] ={0.05 ,  0.065, 0.075, 0.09, 0.11};
+  //double fAxisLabelSizes[] ={0.045,  0.05 , 0.055, 0.07, 0.09};
+  //double fZAxisLabelSizes[]={0.030,  0.035, 0.045, 0.05, 0.06};
+  //double fXTitleOffsets[] = {1.30 ,  1.15 , 1.00, 0.80, 0.80};
+  //double fYTitleOffsets[] = {1.90 ,  1.45 , 1.30, 1.10, 1.00};
+  double fAxisTitleSizes[] ={0.05 ,  0.065, 0.080, 0.09, 0.11};
   double fAxisLabelSizes[] ={0.045,  0.05 , 0.055, 0.07, 0.09};
-  double fZAxisLabelSizes[]={0.030,  0.035, 0.045, 0.05, 0.06};
+  double fZAxisLabelSizes[]={0.030,  0.035, 0.050, 0.05, 0.06};
   double fXTitleOffsets[] = {1.30 ,  1.15 , 1.00, 0.80, 0.80};
   double fYTitleOffsets[] = {1.90 ,  1.45 , 1.30, 1.10, 1.00};
 
+
   int fFillStylePave=1001;
-  int fBorderSizePave=1;
+  int fBorderSizePave=0;
 
   int fDefaultFont=132;
 
@@ -312,7 +318,7 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
       double x=0,y=0,sigx=0,sigy=0;
       hdata(TH1D *h):TObject(),hist(h) {}
       virtual ~hdata() {}
-      void print() { std::cout<<"n:"<<n<<"| xy:"<<x<<", "<<y<<"| dxy:"<<sigx<<", "<<sigy<<endl; }//"| ddxy:"<<ddx<<", "<<ddy<<std::endl; }
+      void print() { std::cout<<"n:"<<n<<"| xy:"<<x<<", "<<y<<"| dxy:"<<sigx<<", "<<sigy<<endl; }
       double error() { return sqrt(sigx*sigx+sigy*sigy); }
       double get(TString val) {
         double c = 1;
@@ -725,6 +731,8 @@ TGraphErrors *make (TGraphErrors *gr, int mi=20, float ms=.8, int mc=24); ///< m
 
 
   TH1D *subtract(TH1D *hist,TF1 *f1);
+
+  bool isValueInArray(int value, vector<int> array);
 }; 
 
 void ejungwoo::gvmark(TString vmtext) {
@@ -1478,7 +1486,7 @@ TH1 *ejungwoo::make(int s, TH1 *h, double xc, double yc) { //jumpto_maken
   return h;
 }
 
-TH1 *ejungwoo::make(TH1 *h) { return ejungwoo::make(1,h); } //jumpto_makeh
+TH1 *ejungwoo::make(TH1 *h) { return ejungwoo::make(2,h); } //jumpto_makeh
 TH1 *ejungwoo::make2(TH1 *h) { return ejungwoo::make(2,h); } //jumpto_makeh2 
 
 TLegend *ejungwoo::makel(TLegend *legend, double dx, double dy) { //jumpto_makell
@@ -2918,6 +2926,15 @@ TH1D *ejungwoo::subtract(TH1D *h, TF1 *f1)
   }
 
   return hist;
+}
+
+bool ejungwoo::isValueInArray(int value, vector<int> array)
+{
+  for (auto a : array)
+    if (a==value)
+      return true;
+
+  return false;
 }
 
 #endif
