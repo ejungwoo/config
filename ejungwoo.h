@@ -87,6 +87,8 @@ namespace ejungwoo
 
   int fCountFrame=0;
   int fCountCvs=0;
+  int fCountCvsX=0;
+  int fCountCvsY=0;
   int fCountHist=0;
   int fCountGraph=0;
 
@@ -104,6 +106,10 @@ namespace ejungwoo
   double fXOffStat=0;
   double fYOffStat=0;
 
+  bool fUserStatsSize = false;
+  double fStatsXRatio = .4;
+  double fStatsYRatio = .2;
+
   int fXCvs=0;
   int fYCvs=0;
 
@@ -117,8 +123,6 @@ namespace ejungwoo
 
   double fWStat=0.30;
   double fHStat=0.25;
-  double fXStat=0.95;
-  double fYStat=0.88;
 
   double fTMargin=0.12;
   double fBMargin=0.16;
@@ -216,7 +220,11 @@ namespace ejungwoo
   Color_t ccombi(int icolor);
 
   void gstatpos(double xoff, double yoff=0);
+  void gstatsizex();
+  void gstatsize(double xratio = 0.4, double yratio = 0.2);
   void gcvspos(double xoff, double yoff=0);
+  void gresetcvsx();
+  void gresetcvsy();
 
   TCanvas *cv1 (TString nm="",double w=0,double h=0,TString l=""); ///<  500 x 550 for 1D
   TCanvas *cv2 (TString nm="",double w=0,double h=0,TString l=""); ///<  600 x 550 for 1D
@@ -248,7 +256,11 @@ namespace ejungwoo
 
   TObject *make (TObject *ob);      ///< make object stylish!,            jumpto_makeo
 
-  TH2D *frame(double x1, double x2, double y1, double y2);
+  TH1D *histf(double x1, double x2);
+  TH2D *histf(double x1, double x2, double y1, double y2);
+  TH2D *histf(TGraph *graph);
+
+  TLine *line(double x1, double x2, double y1, double y2);
 
   TGraph *newg(TString name="");    ///< jumpto_newg
   TGraph *make (TGraph *gr, int mi=20, float ms=.8, int mc=1);       ///< make graph stylish!,             jumpto_makeg
@@ -296,7 +308,8 @@ namespace ejungwoo
   TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, double maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
   TH1 *norm_integral(TH1 *h, double normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
-  TH1D *fold0(TH1 *h);
+  TH1D *fold0(TH1D *h);
+  TH2D *fold0(TH2D *h);
 
   TH1D *pdg_hist(const char *name="particleID", const char *title=";particles;");
   void gpdgname(bool usename);
@@ -305,6 +318,7 @@ namespace ejungwoo
 
   void gversion(TString val); ///< if version is set, fVersion is used instead of doing verson control.
   void gversion2(TString val); ///< if version is set, fVersion is used instead of doing verson control.
+  const char *versioncc(); ///< return version
   TString version(); ///< return version
   TString version2(); ///< return version
 
@@ -1184,21 +1198,6 @@ void ejungwoo::cuttr(double r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; }
 void ejungwoo::cutall(double r) { fTMargin = r; fRMarginH1 = r; fRMarginH2 = r; fBMargin = r; fLMargin = r; }
 
 void ejungwoo::init() {
-  /*
-     fXStat=1.-fRMargin;
-     fYStat=1.-fTMargin;
-     auto x1=0.+fLMargin; auto x2=1.-fRMargin; auto dx=x2-x1;
-     auto y1=0.+fBMargin; auto y2=1.-fTMargin; auto dy=y2-y1;
-     gStyle->SetStatStyle(fFillStylePave);
-     gStyle->SetStatW(dx*fWStat);
-     gStyle->SetStatH(dy*fHStat);
-     gStyle->SetStatX(fXStat);
-     gStyle->SetStatY(fYStat);
-
-     gStyle->SetLegendFont(fDefaultFont);
-     gStyle->SetStatFont(fDefaultFont);
-   */
-
   gStyle->SetTitleFontSize(fMainTitleSize);
 }
 
@@ -1208,10 +1207,32 @@ void ejungwoo::gstatpos(double xoff, double yoff)
   fYOffStat = yoff;
 }
 
+void ejungwoo::gstatsizex()
+{
+  fUserStatsSize = false;
+}
+
+void ejungwoo::gstatsize(double xratio, double yratio)
+{
+  fUserStatsSize = true;
+  fStatsXRatio = xratio;
+  fStatsYRatio = yratio;
+}
+
 void ejungwoo::gcvspos(double xoff, double yoff)
 {
   fXCvs = xoff;
   fYCvs = yoff;
+}
+
+void ejungwoo::gresetcvsx()
+{
+  fCountCvsX = 0;
+}
+
+void ejungwoo::gresetcvsy()
+{
+  fCountCvsY = 0;
 }
 
 TCanvas *ejungwoo::cv1(TString name,double w,double h,TString logs) {
@@ -1221,8 +1242,11 @@ TCanvas *ejungwoo::cv1(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1233,8 +1257,11 @@ TCanvas *ejungwoo::cv2(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1245,8 +1272,11 @@ TCanvas *ejungwoo::cv3(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1257,8 +1287,11 @@ TCanvas *ejungwoo::cc3(TString name,double w,double h,TString logs) {
   if(h==0) h=fHCC3;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1269,8 +1302,11 @@ TCanvas *ejungwoo::cc4(TString name,double w,double h,TString logs) {
   if(h==0) h=fHCC4;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1281,8 +1317,11 @@ TCanvas *ejungwoo::cc1(TString name,double w,double h,TString logs) {
   if(h==0) h=fHC3;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1293,8 +1332,11 @@ TCanvas *ejungwoo::cc2(TString name,double w,double h,TString logs) {
   if(h==0) h=fHCC2;
   if(name.IsNull()) name=Form("canvas-%d",fCountCvs);
   name = makename(name);
-  auto cvs=new TCanvas(name,name,(fCountCvs+1)*20+fXCvs,(fCountCvs+1)*20+fYCvs,w,h);
-  make(cvs,logs); ++fCountCvs;
+  auto cvs=new TCanvas(name,name,(fCountCvsX+1)*20+fXCvs,(fCountCvsY+1)*20+fYCvs,w,h);
+  make(cvs,logs);
+  ++fCountCvs;
+  ++fCountCvsX;
+  ++fCountCvsY;
   return cvs;
 }
 
@@ -1314,15 +1356,15 @@ TCanvas *ejungwoo::div0(TCanvas *c,int nx,int ny)
     for (auto iy=1; iy<=ny; ++iy) {
       auto i = ix + nx*(iy-1);
       if (iy==1&&iy==ny) {
-        if (ix==1)  c->cd(i)->SetMargin(fLMargin,       0,fBMargin,fTMargin);
-        else if (ix==nx) c->cd(i)->SetMargin(       0,fRMargin,fBMargin,fTMargin);
-        else             c->cd(i)->SetMargin(       0,       0,fBMargin,fTMargin);
+        if (ix==1)       c->cd(i)->SetMargin(fLMargin,       0,fBMargin,0);//fTMargin);
+        else if (ix==nx) c->cd(i)->SetMargin(       0,fRMargin,fBMargin,0);//fTMargin);
+        else             c->cd(i)->SetMargin(       0,       0,fBMargin,0);//fTMargin);
       }
       else if (iy==1) {
-        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,0,fTMargin);
-        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,0,fTMargin);
-        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,0,fTMargin);
-        else               c->cd(i)->SetMargin(       0,       0,0,fTMargin);
+        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,0,0);//fTMargin);
+        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,0,0);//fTMargin);
+        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,0,0);//fTMargin);
+        else               c->cd(i)->SetMargin(       0,       0,0,0);//fTMargin);
       }
       else if (iy==ny) {
         if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,fBMargin,0);
@@ -1437,20 +1479,16 @@ TCanvas *ejungwoo::make(TCanvas *cvs,TString vmtext) { //jumpto_makec
           auto y1=0.+mgBottom; auto y2=1.-mgTop; auto dy=y2-y1;
           auto numLines=statsbox->GetListOfLines()->GetEntries();
           double xratio, yratio;
-
-          if (numLines<9)  { xratio = 0.400; yratio=0.06*numLines; }
-          else if (numLines<15) { xratio = 0.325; yratio=0.04*numLines; }
-          else if (numLines<20) { xratio = 0.350; yratio=0.03*numLines; }
-          else                  { xratio = 0.375; yratio=0.6;           }
+          if (fUserStatsSize)   { xratio = fStatsXRatio; yratio = fStatsYRatio; }
+          else if (numLines<2)  { xratio = 0.380; yratio = 0.065*numLines; }
+          else if (numLines<5)  { xratio = 0.300; yratio = 0.05*numLines; }
+          else if (numLines<15) { xratio = 0.325; yratio = 0.04*numLines; }
+          else if (numLines<20) { xratio = 0.350; yratio = 0.03*numLines; }
+          else                  { xratio = 0.375; yratio = 0.6;           }
           statsbox->SetX1NDC(x2-dx*xratio + fXOffStat);
           statsbox->SetY1NDC(y2-dx*yratio + fYOffStat);
           statsbox->SetX2NDC(x2 + fXOffStat);
           statsbox->SetY2NDC(y2 + fYOffStat);
-
-          cout << x2-dx*xratio + fXOffStat << endl;
-          cout << x2 + fXOffStat << endl;
-          cout << y2-dx*yratio + fYOffStat << endl;
-          cout << y2 + fYOffStat << endl;
 
           statsbox->SetTextFont(fDefaultFont);
 
@@ -1484,19 +1522,20 @@ TCanvas *ejungwoo::make(TCanvas *cvs,TString vmtext) { //jumpto_makec
           if (obj3->InheritsFrom(TH1::Class())) {
             innercvs->cd();
             getvmark(true, vmtext);
-            auto h = (TH1D *) obj2;
+            auto h = (TH1D *) obj3;
             make(h);
             auto statsbox = dynamic_cast<TPaveStats*>(h->FindObject("stats"));
-            if (statsbox != nullptr)
-            {
+            if (statsbox != nullptr) {
               auto x1=0.+mgLeft; auto x2=1.-mgRight; auto dx=x2-x1;
               auto y1=0.+mgBottom; auto y2=1.-mgTop; auto dy=y2-y1;
               auto numLines=statsbox->GetListOfLines()->GetEntries();
               double xratio, yratio;
-              if (numLines<5)  { xratio = 0.300; yratio=0.05*numLines; }
-              else if (numLines<15) { xratio = 0.325; yratio=0.04*numLines; }
-              else if (numLines<20) { xratio = 0.350; yratio=0.03*numLines; }
-              else                  { xratio = 0.375; yratio=0.6;           }
+              if (fUserStatsSize)   { xratio = fStatsXRatio; yratio = fStatsYRatio; }
+              else if (numLines<2)  { xratio = 0.380; yratio = 0.065*numLines; }
+              else if (numLines<5)  { xratio = 0.300; yratio = 0.05*numLines; }
+              else if (numLines<15) { xratio = 0.325; yratio = 0.04*numLines; }
+              else if (numLines<20) { xratio = 0.350; yratio = 0.03*numLines; }
+              else                  { xratio = 0.375; yratio = 0.6;           }
               statsbox->SetX1NDC(x2-dx*xratio + fXOffStat);
               statsbox->SetY1NDC(y2-dx*yratio + fYOffStat);
               statsbox->SetX2NDC(x2 + fXOffStat);
@@ -1542,10 +1581,36 @@ TGraph *ejungwoo::make(TGraph *graph, int mi, float ms, int mc) { //jumpto_makeg
   return graph;
 }
 
-TH2D *ejungwoo::frame(double x1, double x2, double y1, double y2)
+TH1D *ejungwoo::histf(double x1, double x2)
+{
+  auto h = new TH1D(Form("frame_%d",fCountFrame++),"", 200, x1, x2);
+  return (TH1D *) make(h);
+}
+
+TH2D *ejungwoo::histf(double x1, double x2, double y1, double y2)
 {
   auto h = new TH2D(Form("frame_%d",fCountFrame++),"", 200, x1, x2, 200, y1, y2);
-  return h;
+  return (TH2D *) make(h);
+}
+
+TH2D *ejungwoo::histf(TGraph *graph)
+{
+  double x1, x2, y1, y2;
+  graph -> ComputeRange(x1,y1,x2,y2);
+  double offx = (x2-x1)/10;
+  double offy = (y2-y1)/10;
+  x1 = x1 - offx;
+  x2 = x2 + offx;
+  y1 = y1 - offy;
+  y2 = y2 + offy;
+  if (x2<=x1) { x1 = 0; x2 = 1; }
+  if (y2<=y1) { y1 = 0; y2 = 1; }
+  return histf(x1, x2, y1, y2);
+}
+
+TLine *ejungwoo::line(double x1, double y1, double x2, double y2)
+{
+  return new TLine(x1, y1, x2, y2);
 }
 
 TGraph *ejungwoo::newg(TString name) { //jumpto_newg
@@ -1867,7 +1932,7 @@ TH1 *ejungwoo::norm_integral(TH1 *h, double normto)
   return hist;
 }
 
-TH1D *ejungwoo::fold0(TH1 *h)
+TH1D *ejungwoo::fold0(TH1D *h)
 {
   auto hist = (TH1 *) h;
   auto bin0 = hist -> FindBin(0);
@@ -2011,6 +2076,7 @@ void ejungwoo::gversion(TString val) {
   fDataDirName = "data_"+fVersion;
 }
 
+const char *ejungwoo::versioncc() { return fVersion.Data(); }
 TString ejungwoo::version() { return fVersion; }
 TString ejungwoo::version2() { return fVersion2; }
 
@@ -2240,65 +2306,107 @@ TObjArray *ejungwoo::infog(TF1 *f, int cmax, vector<int> guideCS)
 
 TF1 *ejungwoo::fitg(TF1 *f, TH1 *h,double c,Option_t *opt) {
   if(fVerbose>1) {
-    if(!TString(opt).IsNull()) std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
-    else                       std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
+    if(!TString(opt).IsNull()) std::cout<<"fitg "<<h->GetName()<<": ["<<c<<" sigma],["<<TString(opt)<<"]";
+    else                       std::cout<<"fitg "<<h->GetName()<<": ["<<c<<" sigma]";
   }
-  //auto binmax=h->GetMaximumBin();
-  //auto max=h->GetBinContent(binmax);
-  //auto xmax=h->GetXaxis()->GetBinCenter(binmax);
-  //auto xerr=h->GetStdDev();
+
   auto max=f->GetParameter(0);
   auto xmax=f->GetParameter(1);
   auto xerr=f->GetParameter(2);
-  //auto f=new TF1(Form("%s_fitg",h->GetName()),"gaus(0)",xmax-xerr*c,xmax+xerr*c);
-  //f->SetParameters(max,xmax,xerr);
+
+  double frange1, frange2;
+  double dfrangeCut = (frange2 - frange1)/3.;
+
+  auto nbins = h->GetXaxis()->GetNbins();
+  auto hrange1 = h->GetXaxis()->GetBinLowEdge(1);
+  auto hrange2 = h->GetXaxis()->GetBinUpEdge(nbins);
+  bool outofrange;
+
+  outofrange = false;
+  f->GetRange(frange1, frange2);
+  if (frange1 < hrange1) {
+    if (frange2 < hrange1) outofrange = true;
+    else if (frange2 - hrange1 < dfrangeCut) outofrange = true;
+    else frange1 = hrange1;
+  } else if (frange2 > hrange2) {
+    if (frange1 > hrange2) outofrange = true;
+    else if (hrange2 - frange1 < dfrangeCut) outofrange = true;
+    else frange2 = hrange2;
+  } f->SetRange(frange1, frange2);
+
+  if (outofrange) {
+    if(fVerbose>1) std::cout<<" fit-range:("<<frange1<<","<<frange2<<") out of hist-range:("<<hrange1<<","<<hrange2<<")"<<endl;
+    f -> SetParameters(0,0,0);
+    return f;
+  }
+
   h->Fit(f,opt);
   xmax=f->GetParameter(1);
   xerr=f->GetParameter(2);
+  f->SetRange(xmax-c*xerr,xmax+c*xerr);
+
+  outofrange = false;
+  f->GetRange(frange1, frange2);
+  if (frange1 < hrange1) {
+    if (frange2 < hrange1) outofrange = true;
+    else if (frange2 - hrange1 < dfrangeCut) outofrange = true;
+    else frange1 = hrange1;
+  } else if (frange2 > hrange2) {
+    if (frange1 > hrange2) outofrange = true;
+    else if (hrange2 - frange1 < dfrangeCut) outofrange = true;
+    else frange2 = hrange2;
+  } f->SetRange(frange1, frange2);
+
+  if (outofrange) {
+    if(fVerbose>1) std::cout<<" fit-range:("<<frange1<<","<<frange2<<") out of hist-range:("<<hrange1<<","<<hrange2<<")"<<endl;
+    f -> SetParameters(0,0,0);
+    return f;
+  }
 
   int fitcount = 1;
   double xerr2 = 0.;
   while (fitcount<20&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
     xerr2=xerr;
     f->SetRange(xmax-c*xerr2,xmax+c*xerr2);
+    {
+      f->GetRange(frange1, frange2);
+
+      nbins = h->GetXaxis()->GetNbins();
+      hrange1 = h->GetXaxis()->GetBinLowEdge(1);
+      hrange2 = h->GetXaxis()->GetBinUpEdge(nbins);
+
+      outofrange = false;
+      f->GetRange(frange1, frange2);
+      if (frange1 < hrange1) {
+        if (frange2 < hrange1) outofrange = true;
+        else if (frange2 - hrange1 < dfrangeCut) outofrange = true;
+        else frange1 = hrange1;
+      } else if (frange2 > hrange2) {
+        if (frange1 > hrange2) outofrange = true;
+        else if (hrange2 - frange1 < dfrangeCut) outofrange = true;
+        else frange2 = hrange2;
+      } f->SetRange(frange1, frange2);
+      if (outofrange)
+        break;
+    }
     h->Fit(f,opt);
     xmax=f->GetParameter(1);
     xerr=f->GetParameter(2);
     ++fitcount;
   }
 
-  if(fVerbose>1)std::cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<std::endl;
+  if(fVerbose>1)std::cout<<"->[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<std::endl;
   return f;
 }
 
 TF1 *ejungwoo::fitg(TH1 *h,double c,Option_t *opt) {
-  if(fVerbose>1) {
-    if(!TString(opt).IsNull()) std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma],[o:"<<TString(opt)<<"]->";
-    else                       std::cout<<"fg "<<h->GetName()<<": ["<<c<<"-sigma]->";
-  }
   auto binmax=h->GetMaximumBin();
   auto max=h->GetBinContent(binmax);
   auto xmax=h->GetXaxis()->GetBinCenter(binmax);
   auto xerr=h->GetStdDev();
   auto f=new TF1(Form("%s_fitg",h->GetName()),"gaus(0)",xmax-xerr*c,xmax+xerr*c);
   f->SetParameters(max,xmax,xerr);
-  h->Fit(f,opt);
-  xmax=f->GetParameter(1);
-  xerr=f->GetParameter(2);
-
-  int fitcount = 1;
-  double xerr2 = 0.;
-  while (fitcount<20&&TMath::Abs(xerr-xerr2)/xerr>0.2) {
-    xerr2=xerr;
-    f->SetRange(xmax-c*xerr2,xmax+c*xerr2);
-    h->Fit(f,opt);
-    xmax=f->GetParameter(1);
-    xerr=f->GetParameter(2);
-    ++fitcount;
-  }
-
-  if(fVerbose>1)std::cout<<"[a:"<<f->GetParameter(0)<<", m:"<<f->GetParameter(1)<<", s:"<<f->GetParameter(2)<<"] ("<<fitcount<<")"<<std::endl;
-  return f;
+  return fitg(f,h,c,opt);
 }
 
 TF1 *ejungwoo::fitgg(TH1 *h,double c,Option_t *opt) {
@@ -2635,7 +2743,7 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int nDivision, double c, int entry_c
     TString value1 = Form("%.2f",x1); value1.ReplaceAll(".00","");
     TString value2 = Form("%.2f",x2); value2.ReplaceAll(".00","");
     hp->SetTitle(TString(Form("%s=%s~%s;%s",oxtitle.Data(),value1.Data(),value2.Data(),oytitle.Data())));
-    auto n=hp->GetEntries();
+    auto n=hp->Integral();
     if(n<entry_cut) continue;
     auto f1=fitg(hp,c);
 
@@ -2649,6 +2757,9 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int nDivision, double c, int entry_c
       }
     }
 
+    if (f1->GetParameter(0)==0&&f1->GetParameter(2)==0)
+      continue;
+
     auto hd=new ejungwoo::hdata(hp);
     array->Add(hd);
     hd->n=n;
@@ -2656,9 +2767,7 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int nDivision, double c, int entry_c
     hd->sigx=x2-x1;
     hd->y=f1->GetParameter(1);
     hd->sigy=f1->GetParameter(2);
-    //hd->dy=f1->GetParameter(2);
-    //hd->ddy=f1->GetParError(2);
-    if(fVerbose>1)
+    if(fVerbose>2)
       hd->print();
   }
   return array;
@@ -2680,7 +2789,7 @@ TObjArray *ejungwoo::fitgsy_list(TH1 *hist, int nDivision, double c, int entry_c
     TString value1 = Form("%.2f",y1); value1.ReplaceAll(".00","");
     TString value2 = Form("%.2f",y2); value2.ReplaceAll(".00","");
     hp->SetTitle(TString(Form("%s=%s~%s;%s",oytitle.Data(),value1.Data(),value2.Data(),oxtitle.Data())));
-    auto n=hp->GetEntries();
+    auto n=hp->Integral();
     if(n<entry_cut) continue;
     auto f1=fitg(hp,c);
 
@@ -2694,6 +2803,9 @@ TObjArray *ejungwoo::fitgsy_list(TH1 *hist, int nDivision, double c, int entry_c
       }
     }
 
+    if (f1->GetParameter(0)==0&&f1->GetParameter(2)==0)
+      continue;
+
     auto hd=new ejungwoo::hdata(hp);
     array->Add(hd);
     hd->n=n;
@@ -2701,7 +2813,7 @@ TObjArray *ejungwoo::fitgsy_list(TH1 *hist, int nDivision, double c, int entry_c
     hd->sigy=y2-y1;
     hd->x=f1->GetParameter(1);
     hd->sigx=f1->GetParameter(2);
-    if(fVerbose>1)
+    if(fVerbose>2)
       hd->print();
   }
   return array;
@@ -2745,7 +2857,7 @@ TGraphErrors *ejungwoo::fitgsy(TH1 *hist, TString xo, TString yo, TString xoe, T
     auto h=(ejungwoo::hdata*)array->At(i);
     graph->SetPoint(i,h->get(xo),h->get(yo));
     graph->SetPointError(i,h->get(xoe),h->get(yoe));
-    if(fVerbose>1)
+    if(fVerbose>2)
       std::cout << h->get(xo) << " " << h->get(yo) << " " << h->get(xoe) << " " << h->get(yoe) << std::endl;
   }
   return make(graph);
