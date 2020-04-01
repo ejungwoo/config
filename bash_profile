@@ -4,11 +4,13 @@ export LSCOLORS=ExFxCxDxBxegedabagacad
 export PS1="@ \h:\W > "
 export OPENSSL_ROOT_DIR=/usr/local/opt/openssl/
 export PATH=$PATH:/Library/TeX/Distributions/.DefaultTeX/Contents/Programs/texbin
+export BASH_SILENCE_DEPRECATION_WARNING=1 # ignore message ... change to zsh 
 ########################################################################
 
 ########################################################################
 alias rm='rm -i'
 alias vi='vim -O'
+alias iv='vi'
 alias ll='ls -lha'
 alias ssh='ssh -Y -A -C'
 alias scpl='scp -l 8192'
@@ -37,6 +39,12 @@ alias gitut='git clean -fd --dry-run'
 alias gitls='git ls-tree -r HEAD --name-only'
 alias gitd='git diff -U0'
 alias gitr='git remote -v'
+function gitv() {
+  GIT_BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+  GIT_BRANCH_COUNT=$(git rev-list --count $GIT_BRANCH_NAME)
+  GIT_BRANCH_HASH=$(git rev-parse --short $GIT_BRANCH_NAME)
+  echo $GIT_BRANCH_NAME.$GIT_BRANCH_COUNT.$GIT_BRANCH_HASH
+}
 ########################################################################
 
 ########################################################################
@@ -52,7 +60,7 @@ function scpana() {
 }
 
 ########################################################################
-alias geant4='source /Users/ejungwoo/geant4-v10.5.0.build/geant4make.sh'
+alias geant4='source /Users/ejungwoo/geant4-v10.5.0.build.catalina/geant4make.sh'
 ########################################################################
 function kebi() {
   echo "+ kebi"
