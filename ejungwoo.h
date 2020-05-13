@@ -52,6 +52,8 @@ namespace ejungwoo
   class TEJCanvas;
   class THistMeanError;
 
+  struct binning {int n; double min; double max;};
+
   bool fAllowSave = true;
   bool fAllowWrite = true;
   bool fAllowDrawC = true;
@@ -391,6 +393,7 @@ namespace ejungwoo
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const double *xbins); ///< simple tree projection starting with name using xbins for x-axis, jumpto_tp1
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with name, jumpto_tp2
   TH1 *tp(TString name,TTree *tree,TString formula="",TCut cut="",TString title="",int nx=-1,int ny=-1); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp3
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp33
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< tree projection from tree with cuts, return array of histograms with applied cut jumpto_tp4
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title="",int nx=-1,int ny=-1); ///< tree projection from tree with automatic bin range calculation with cuts return array of histograms with applied cut jumpto_tp5
 
@@ -3152,6 +3155,12 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
   if(ny==-1)ny=200;
   if(formula.Index(":")>=0) return tp(tree,formula,cut,name,title,nx,0,0,ny,-1,-1);
   else                      return tp(tree,formula,cut,name,title,nx,0,0,-1,-1,-1);
+}
+
+TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy) { //jumpto_tp33
+  if (formula.IsNull()) formula=name;
+  if(formula.Index(":")>=0) return tp(tree,formula,cut,name,title, binningx.n,binningx.min,binningx.max, binningy.n,binningy.min,binningy.max);
+  else                      return tp(tree,formula,cut,name,title, binningx.n,binningx.min,binningx.max, -1,-1,-1);
 }
 
 TChain *ejungwoo::chain(TChain *chain, TString treename, TString filename, int from, int to, int *rmlist, int numrm)
