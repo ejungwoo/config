@@ -67,11 +67,18 @@ namespace ejungwoo
   bool fDrawLgndLeft = false;
   bool fDrawDarkMode = false;
   bool fDrawLgndBySide = false;
+  bool fFixCvsX = false;
+  bool fFixCvsY = false;
+  bool fSetJumpCvs = false;
   int fXInitCvs = 0;
   int fYInitCvs = 0;
   int fCountCvs = 0;
   int fCountCvsX = 0;
+  int fSpaceXCvs = 20;
+  int fSpaceYCvs = 20;
   int fCountCvsY = 0;
+  int fJumpAtX = 0;
+  int fJumpY = 0;
   int fCountHist = 0;
   int fCountGraph = 0;
   int fCountFrame = 0;
@@ -80,7 +87,7 @@ namespace ejungwoo
   int fFillStylePave = 0;
   int fBorderSizePave = 1;
   int fFillStyleLegend = 0;
-  int fBorderSizeLegend = 1;
+  int fBorderSizeLegend = 0;
   int fFillStyleStatsbox = 0;
   int fBorderSizeStatsbox = 1;
   int fAxisNDivisions = 506;
@@ -121,18 +128,17 @@ namespace ejungwoo
 
 
   /********************************************************/
-  int fNumColors = 3;
-  Color_t fColorList[] = {kBlack, kPink+7, kGreen+1, kBlue-4};
+  //int fNumColors = 3;
+  //Color_t fColorList[] = {kBlack, kPink+7, kGreen+1, kBlue-4};
 
-  /*
-  int fNumColors = 31;
+  int fNumColors = 9;
   Color_t fColorList[] = {
-    kOrange-4, kOrange+6, kOrange+8, kOrange-3, kOrange, kYellow,
-    kSpring+8, kSpring+7, kSpring-5, kTeal+5, kSpring-6, kTeal+3, kCyan+3, kCyan+2, kCyan+1,
-    kAzure+7, kBlue-4, kBlue, kBlue+1, kViolet+4, kViolet-6, kViolet-5,
-    kPink+3, kRed+1, kRed, kRed-4, kPink-2, kPink+7, kOrange+3, kSpring+6, kSpring+1,
+    kBlack, kOrange+8, kOrange, kSpring+7, kSpring-6, kAzure+7, kBlue, kViolet-5, kPink+7, kGray+1
+    //kOrange-4, kOrange+6, kOrange+8, kOrange-3, kOrange, kYellow,
+    //kSpring+8, kSpring+7, kSpring-5, kTeal+5, kSpring-6, kTeal+3, kCyan+3, kCyan+2, kCyan+1,
+    //kAzure+7, kBlue-4, kBlue, kBlue+1, kViolet+4, kViolet-6, kViolet-5,
+    //kPink+3, kRed+1, kRed, kRed-4, kPink-2, kPink+7, kOrange+3, kSpring+6, kSpring+1,
   };
-  */
 
 
   /********************************************************/
@@ -158,8 +164,13 @@ namespace ejungwoo
   void gstatsize(double dx_byratio = 0.4, double dy_byratio = 0.28); ///< force statsbox size
   void gfixstatsize(bool val); ///< reset force-statsbox-size
   void gcvspos(double xoff, double yoff=0); ///< set initial canvas position in the monitor
+  void gfixcvsx(bool fix=true); ///<fix x-position of canvas
+  void gfixcvsy(bool fix=true); ///<fix y-position of canvas
+  void gfixcvsxy(bool fix=true); ///<fix y-position of canvas
   void gresetcvsx(); ///< reset canvas x-position to initial position
   void gresetcvsy(); ///< reset canvas y-position to initial position
+  void gsetjumpcvs(int jumpatx = 1200, int jumpy = 300);
+  void gsetjumpcvs(bool setjump);
   void gversion(TString val); ///< if version is set, fVersion is used instead of doing verson control.
   void gversionin(TString val); ///< if version is set, fVersion is used instead of doing verson control.
   void gversionout(TString val); ///< if version is set, fVersion is used instead of doing verson control.
@@ -259,8 +270,9 @@ namespace ejungwoo
   TH1D *new_h(double x1, double x2); ///< make dummy histogram frame
   TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame
   TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph
-  TH1 *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
-  TH1 *tohist(double *buffer, int i, int f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
+  TH1D *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
+  TH1D *tohist(double *buffer, int i, int f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
+  TH1D *tohist(TGraph *graph, Double_t histx1, Double_t histx2);
   TH1 *inv(TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
   TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, double maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
@@ -364,8 +376,10 @@ namespace ejungwoo
   void clearc(TString name); ///< clear TEJCanvas of name name
   TCanvas *drawc(int i=0,TString opt="cvsl"); ///< draw objects in TEJCanvas of index i collected by add()/addto(). jump_to_drawc1
   TCanvas *drawc(TString name,TString opt="cvsl"); ///< draw objects in TEJCanvas of name name collected by add()/addto(). jump_to_drawc2
-  void drawall();
+  void drawall(TString opt="cvsl");
   void saveall(TString opt="pdf");
+  void printc(int i);
+  void printc(TString name);
 
 
   // TTree
@@ -413,6 +427,7 @@ class ejungwoo::TEJDrawObject : public TNamed {
     TString fLegendOption;
     istype fObjectType = kOther;
     int fIdxInCanvas = -1;
+    bool fSetColor = true;
     bool fOmitDraw = false;
     bool fLogx = false, fLogy = false, fLogz = false;
     double fX1Range, fX2Range, fY1Range, fY2Range;
@@ -426,6 +441,11 @@ class ejungwoo::TEJDrawObject : public TNamed {
       if (fDrawOption.Index("logy")>=0) { fDrawOption.ReplaceAll("logy",""); fLogy = true; }
       if (fDrawOption.Index("logz")>=0) { fDrawOption.ReplaceAll("logz",""); fLogz = true; }
 
+      bool addx = false;
+      if (fDrawOption.Index("addx")>=0) { fDrawOption.ReplaceAll("addx",""); addx = true; }
+
+      if (fDrawOption.Index("colorx")>=0) { fDrawOption.ReplaceAll("colorx",""); fSetColor = false; }
+
       if (fObject->InheritsFrom(TH2::Class())) {
         auto hist = (TH2 *) make_h((TH2 *) fObject);
         if (title.IsNull()) title = hist->GetTitle();
@@ -433,7 +453,7 @@ class ejungwoo::TEJDrawObject : public TNamed {
         fObjectType = kHistogram2;
         if (fDrawOption=="frame") fDrawOption = "";
         else if (fDrawOption.Index("col")<0) fDrawOption = fDrawOption + " colz";
-        fLegendOption = "";
+        fLegendOption = "f";
 
         fX1Range = hist -> GetXaxis() -> GetBinLowEdge(1);
         fX2Range = hist -> GetXaxis() -> GetBinUpEdge(hist -> GetNbinsX());
@@ -529,6 +549,9 @@ class ejungwoo::TEJDrawObject : public TNamed {
       else
         fObjectType = kOther;
 
+      if (addx)
+        fLegendOption = "";
+
       SetTitle(title);
 
       if (ejungwoo::fVerboseRich)
@@ -567,9 +590,10 @@ class ejungwoo::TEJDrawObject : public TNamed {
     /****************************************************************/
     virtual void Print(Option_t *option="")
     {
-      cout << "TEJDrawObject["<<fObject->ClassName()<<"] " << fName << ", " << fTitle;
+      //cout << "TEJDrawObject["<<fObject->ClassName()<<"] " << fName << ", " << fTitle;
+      //cout << fName << ", " << fTitle;
       if (IsRanged())
-        cout << " x:(" << fX1Range << " -> " <<  fX2Range << ") y:(" <<  fY1Range << " -> " <<  fY2Range << ")";
+        cout << fIdxInCanvas << " x:(" << fX1Range << " -> " <<  fX2Range << ") y:(" <<  fY1Range << " -> " <<  fY2Range << ")";
       cout << endl;
     }
 
@@ -585,23 +609,25 @@ class ejungwoo::TEJDrawObject : public TNamed {
           fDrawOption.ReplaceAll("a","");
       }
 
-      if (IsHistogram()) {
-        auto graph = (TGraph *) fObject;
-        graph -> SetMarkerColor(ejungwoo::colori(fIdxInCanvas));
-        graph -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
-        graph -> SetFillColor(ejungwoo::colori(fIdxInCanvas));
-      }
+      if (fSetColor) {
+        if (IsHistogram()) {
+          auto graph = (TGraph *) fObject;
+          graph -> SetMarkerColor(ejungwoo::colori(fIdxInCanvas));
+          graph -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
+          graph -> SetFillColor(ejungwoo::colori(fIdxInCanvas));
+        }
 
-      if (IsGraph()) {
-        auto graph = (TGraph *) fObject;
-        graph -> SetMarkerColor(ejungwoo::colori(fIdxInCanvas));
-        graph -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
-        graph -> SetFillColor(ejungwoo::colori(fIdxInCanvas));
-      }
+        if (IsGraph()) {
+          auto graph = (TGraph *) fObject;
+          graph -> SetMarkerColor(ejungwoo::colori(fIdxInCanvas));
+          graph -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
+          graph -> SetFillColor(ejungwoo::colori(fIdxInCanvas));
+        }
 
-      if (IsFunction()) {
-        auto function = (TF1 *) fObject;
-        function -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
+        if (IsFunction()) {
+          auto function = (TF1 *) fObject;
+          function -> SetLineColor(ejungwoo::colori(fIdxInCanvas));
+        }
       }
     }
 
@@ -640,9 +666,9 @@ class ejungwoo::TEJCanvas : public TObjArray
     }
 
     /****************************************************************/
-    void add(TObject *object, TString canvas_option="", TString title="")
+    void add(TObject *object, TString draw_option="", TString title="")
     {
-      auto wrap = new TEJDrawObject(object,canvas_option, title);
+      auto wrap = new TEJDrawObject(object,draw_option,title);
 
       if (!ejungwoo::fVMarkText.IsNull() && fVMarkTextForEJCvs.IsNull())
         fVMarkTextForEJCvs = fVMarkText;
@@ -651,7 +677,7 @@ class ejungwoo::TEJCanvas : public TObjArray
     }
 
     /****************************************************************/
-    TCanvas *drawc(TString cvs_option="cvs")
+    TCanvas *drawc(TString cvs_option="cvsl")
     {
       if (!ejungwoo::fAllowDrawC)
         return (TCanvas *) nullptr;
@@ -751,14 +777,22 @@ class ejungwoo::TEJCanvas : public TObjArray
         }
       }
 
-      if (!exist_legend&&cvs_option.Index("l")>=0)
-        make_l(legend) -> Draw("same");
+      if (!exist_legend) {
+        if (cvs_option.Index("lleft")>=0) {
+          glegendleft(1);
+          make_l(legend) -> Draw("same");
+          glegendleft(0);
+        }
+        else if (cvs_option.Index("l")>=0) {
+          make_l(legend) -> Draw("same");
+        }
+      }
 
       if (set_logx) fCanvas -> SetLogx();
       if (set_logy) fCanvas -> SetLogy();
       if (set_logz) fCanvas -> SetLogz();
 
-      make_c(fCanvas, fVMarkTextForEJCvs);
+      //make_c(fCanvas, fVMarkTextForEJCvs);
 
       return fCanvas;
     }
@@ -766,6 +800,14 @@ class ejungwoo::TEJCanvas : public TObjArray
     /****************************************************************/
     void save(TString opt="") {
       ejungwoo::save(fCanvas,opt);
+    }
+
+    void printc() {
+      int numDrawings = GetEntries();
+      for (auto idraw=0; idraw<numDrawings; ++idraw) {
+        auto wrap = (TEJDrawObject *) At(idraw);
+        wrap -> Print();
+      }
     }
 };
 
@@ -882,8 +924,13 @@ void ejungwoo::gstatsize(double dx_byratio, double dy_byratio) {
 }
 void ejungwoo::gfixstatsize(bool val) { fFixStatSize = val; }
 void ejungwoo::gcvspos(double xoff, double yoff) { fXInitCvs = xoff; fYInitCvs = yoff; }
+void ejungwoo::gfixcvsx(bool fix) { fFixCvsX = fix; }
+void ejungwoo::gfixcvsy(bool fix) { fFixCvsY = fix; }
+void ejungwoo::gfixcvsxy(bool fix) { fFixCvsX = fix; fFixCvsY = fix; }
 void ejungwoo::gresetcvsx() { fCountCvsX = 0; }
 void ejungwoo::gresetcvsy() { fCountCvsY = 0; }
+void ejungwoo::gsetjumpcvs(int jumpatx, int jumpy) { fSetJumpCvs = true; fSpaceYCvs = 0.; fJumpAtX = jumpatx; fJumpY = jumpy; }
+void ejungwoo::gsetjumpcvs(bool setjump) { fSetJumpCvs = setjump; }
 void ejungwoo::gversion(TString val) {
   gversionout(val);
   gversionin(val);
@@ -1291,11 +1338,17 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
   if (width==0) width = 600;
   if (height==0) height = 550;
 
-  auto cvs = new TCanvas(name, title, (fCountCvsX+1)*20 + fXInitCvs, (fCountCvsY+1)*20 + fYInitCvs, width, height);
+  auto cvs = new TCanvas(name, title, (fCountCvsX+1)*fSpaceXCvs + fXInitCvs, (fCountCvsY+1)*fSpaceYCvs + fYInitCvs, width, height);
 
   ++fCountCvs;
-  ++fCountCvsX;
-  ++fCountCvsY;
+  if (fSetJumpCvs) {
+    if ( (fCountCvsX+1)*fSpaceXCvs > fJumpAtX ) {
+      fCountCvsX = 0;
+      fYInitCvs += fJumpY;
+    }
+  }
+  if (!fFixCvsX) ++fCountCvsX;
+  if (!fFixCvsY) ++fCountCvsY;
 
   make_c(cvs);
 
@@ -1867,11 +1920,21 @@ TLegend *ejungwoo::make_l(TCanvas *cvs, TLegend *legend, double x_offset, double
 
   auto y2_legend = y1_stat;
   auto y1_legend = y2_legend - legend->GetNRows() * fHeightPerEntryLegend;
-  if (height_fixed>0) y1_legend = y2_legend - height_fixed;
+  if (height_fixed>0) y1_legend = y2_legend - height_fixed*unit_y;
 
   auto x2_legend = x2_box;
   auto x1_legend = x2_legend - (length_text_max * fWidthPerLengthLegend) - fWidthDefaultLegend*unit_x;
-  if (width_fixed>0) x1_legend = x2_legend - width_fixed*unit_y;
+  if (width_fixed>0) x1_legend = x2_legend - width_fixed*unit_x;
+
+  if (fDrawLgndLeft)
+  {
+    x1_legend = x1_box;
+    x2_legend = x1_legend + (length_text_max * fWidthPerLengthLegend) + fWidthDefaultLegend*unit_x;
+    if (width_fixed>0) x2_legend = x1_legend + width_fixed*unit_x;
+  }
+
+  //cout << "x  " << x1_legend << " " << x2_legend << endl;
+  //cout << "y  " << y1_legend << " " << y2_legend << endl;
 
   /*
   if (exist_stat && fDrawLgndBySide) {
@@ -1896,17 +1959,17 @@ TLegend *ejungwoo::make_l(TCanvas *cvs, TLegend *legend, double x_offset, double
   }
   else
     */
-    if (dx_stat > 0) {
+  if (dx_stat > 0) {
     if (abs(dx_legend-dx_stat)/dx_stat < 0.4)
       dx_legend = dx_stat;
 
     x1_legend = x2_legend - dx_legend;
   }
 
-  legend -> SetX1NDC(x1_legend);
-  legend -> SetX2NDC(x2_legend);
-  legend -> SetY1NDC(y1_legend);
-  legend -> SetY2NDC(y2_legend);
+  legend -> SetX1(x1_legend);
+  legend -> SetX2(x2_legend);
+  legend -> SetY1(y1_legend);
+  legend -> SetY2(y2_legend);
 
   legend -> SetFillStyle(fFillStyleLegend);
   legend -> SetBorderSize(fBorderSizeLegend);
@@ -1970,24 +2033,44 @@ TGraphErrors *ejungwoo::tograph(TString filename)
 }
 */
 
-TH1 *ejungwoo::tohist(double *buffer, int n, TString name, TString title)
+TH1D *ejungwoo::tohist(double *buffer, int n, TString name, TString title)
 {
   if(name.IsNull()) name=Form("hist-%d",fCountHist);
   auto hist = new TH1D(name, title, n, 0, n+1);
   for (auto i = 0; i < n; ++i)
     hist->SetBinContent(i+1,buffer[i]);
   ++fCountHist;
-  return make_h(hist);
+  return (TH1D *) make_h(hist);
 }
 
-TH1 *ejungwoo::tohist(double *buffer, int i, int f, TString name, TString title)
+TH1D *ejungwoo::tohist(double *buffer, int i, int f, TString name, TString title)
 {
   if(name.IsNull()) name=Form("hist-%d",fCountHist);
   auto hist = new TH1D(name, title, f-i+1, i, f+1);
   for (auto bin = i; bin < f+1; ++bin)
     hist->SetBinContent(bin+1-i,buffer[bin]);
   ++fCountHist;
-  return make_h(hist);
+  return (TH1D *) make_h(hist);
+}
+
+TH1D *ejungwoo::tohist(TGraph *graph, Double_t histx1, Double_t histx2)
+{
+  double x0, y0, x1, y1;
+  graph -> GetPoint(0,x0,y0);
+  graph -> GetPoint(1,x1,y1);
+  double dx = abs(x1 - x0);
+  int nbins = (histx2-histx1) / dx;
+  cout << x1 << " " << x0 << " " << nbins << endl;
+  auto hist = new TH1D(TString("tohist_")+graph->GetName(),"",nbins,histx1,histx2);
+
+  auto npoints = graph -> GetN();
+  for (auto i=0; i<npoints; ++i) {
+    double x, y;
+    graph -> GetPoint(i,x,y);
+    hist -> SetBinContent(hist -> FindBin(x),y);
+  }
+
+  return hist;
 }
 
 TH1 *ejungwoo::free(TH1 *h) {
@@ -2820,13 +2903,24 @@ TCanvas *ejungwoo::drawc(TString name,TString opt) { //jump_to_drawc2
   return (TCanvas *) nullptr;
 }
 
-void ejungwoo::drawall() {
+void ejungwoo::drawall(TString opt) {
   if (fEJCanvasArray==nullptr) return;
   auto navcvs = fEJCanvasArray->GetEntries();
   for(auto iacvs=0;iacvs<navcvs;++iacvs) {
     auto ejcvs=(TEJCanvas*)fEJCanvasArray->At(iacvs);
-    ejcvs->drawc();
+    ejcvs->drawc(opt);
   }
+}
+
+void ejungwoo::printc(int i) {
+  auto ejcvs=(TEJCanvas*)fEJCanvasArray->At(i);
+  if(ejcvs!=nullptr)
+    return ejcvs->printc();
+}
+void ejungwoo::printc(TString name) {
+  auto ejcvs=(TEJCanvas*)fEJCanvasArray->FindObject(name);
+  if(ejcvs!=nullptr)
+    return ejcvs->printc();
 }
 
 void ejungwoo::saveall(TString opt) {
@@ -3204,6 +3298,7 @@ TCutG *ejungwoo::cutg(TFile *file, TString cutname, TString x, TString y) {
 TH1 *ejungwoo::cutg(TH1 *h, TCutG *cut) {
   auto h2 = (TH2 *) h;
   auto hnew = (TH2 *) h2->Clone();
+
   hnew->Reset();
   auto nx=h2->GetXaxis()->GetNbins();
   auto ny=h2->GetYaxis()->GetNbins();
@@ -3221,7 +3316,15 @@ TH1 *ejungwoo::cutg(TH1 *h, TCutG *cut) {
       }
     }
   }
-  std::cout<<"cutg->["<<hnew->GetName()<<"],[c:"<<cut->GetName()<<"]->"<<hnew->GetEntries()<<endl;
+
+  TString cutname = cut -> GetName();
+  if (!cutname.IsNull()) {
+    hnew -> SetName(Form("%s_%s",hnew->GetName(),cutname.Data()));
+    hnew -> SetTitle(Form("%s_%s",hnew->GetTitle(),cutname.Data()));
+  }
+
+  if (ejungwoo::fVerboseInfo)
+    std::cout<<"cutg->["<<hnew->GetName()<<"],[c:"<<cut->GetName()<<"]->"<<hnew->GetEntries()<<endl;
   return (TH1 *) hnew;
 }
 
@@ -3320,6 +3423,10 @@ TObjArray *ejungwoo::tok(TString line, TString token) {
 
 TString ejungwoo::tok(TString line, TString token, int i)
 {
+  auto array = line.Tokenize(token);
+  if (array -> GetEntries()==0)
+    return "";
+
   return tok(line.Tokenize(token),i);
 }
 
