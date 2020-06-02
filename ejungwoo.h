@@ -39,8 +39,6 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "TObjArray.h"
-#include "TObjString.h"
 #include "TVirtualPad.h"
 #include "TGraphErrors.h"
 #include "TLegendEntry.h"
@@ -52,7 +50,34 @@ namespace ejungwoo
   class TEJCanvas;
   class THistMeanError;
 
-  struct binning {int n; double min; double max;};
+
+  struct binning {
+    int n;
+    double min;
+    double max;
+  };
+
+  struct titles {
+    TString main;
+    TString x;
+    TString y;
+    TString z;
+
+    TString data() { return main+";"+x+";"+y+";"+z; };
+    void set(TH1 *hist) { hist -> SetTitle(data()); }
+  };
+
+  struct att_line {
+    Color_t color;
+    Style_t style;
+    Width_t width;
+  };
+
+  struct att_marker {
+    Color_t color;
+    Style_t style;
+    Size_t  size;
+  };
 
   bool fAllowSave = true;
   bool fAllowWrite = true;
@@ -122,7 +147,9 @@ namespace ejungwoo
   TString fVersionOut;
   TString fFigDirName = "figures";
   TString fDataDirName = "data";
+  TString fPrintToRootCode = "";
 
+  TObjArray *fCanvasArray;
   TObjArray *fEJCanvasArray;
   TObjArray *fWrittenFileArray;
   std::ifstream fDummyIfstream;
@@ -193,6 +220,7 @@ namespace ejungwoo
   void gstatleft(bool val=true); ///< draw statsbox on the left side of the canvas
   void glegendleft(bool val=true); ///< draw legend on the left side of the canvas
   void glegendbyside(bool val); ///< draw legend by the side of stats
+  void grootcode(bool val=true); ///< print to original root code which will work without this namespace
 
 
   // version
@@ -217,6 +245,12 @@ namespace ejungwoo
   TString name_data(); // get name data directory
   TString name_file(TString name); // give name to file 
   TString name_full(TString name); // give full path name to file 
+
+
+  //particle
+  TDatabasePDG *get_db_pdg();
+  TParticlePDG *get_particle(TString name);
+  TParticlePDG *get_particle(int pdg);
 
 
   // file
@@ -264,12 +298,14 @@ namespace ejungwoo
   void save(TVirtualPad *cvs, TString format="pdf", bool version_control = true); ///< save TVirtualPad. See as save(TCanvas *) for detail
   void save(TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures__[version]/[canvas name].[version-automatically updated].[format]
   void save(TString name, TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures__[version]/[name].[version-automatically updated].[format]
+  void savecvsall(Option_t *opt="");
 
 
   //TH1
   TH1 *make_h(int s, TH1 *h, double xc=1., double yc=1.); ///< make histogram stylish! (s)bigger!, jumpto_maken
   TH1 *make_h(TH1 *h) { return make_h(2,h); } ///< make histogram stylish!, jumpto_makeh
   TH1D *new_h(double x1, double x2); ///< make dummy histogram frame
+  TH1D *new_h(const char *name, titles titles1, binning binning1);
   TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame
   TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph
   TH1D *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
@@ -284,7 +320,7 @@ namespace ejungwoo
   TH1D *fold0(TH1D *h);
   TH2D *fold0(TH2D *h);
   TH1D *pdg_hist(const char *name="particleID", const char *title=";particles;");
-  void nobox(TCanvas *cvs, TH1 *hist);
+  void nobox(TCanvas *cvs, TH1 *hist, Color_t color=0);
   void pdg_axis(TAxis *axis);
   int  pdg_idx(int pdg);
   double max(TH1 *h); ///< get maximum value of histogram
@@ -298,6 +334,8 @@ namespace ejungwoo
   double fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
   TH1 *free (TH1 *h); ///< make axis labels feel free!
   TH1D *subtract(TH1D *hist,TF1 *f1);
+  binning get_binning(TH1D *hist);
+  void get_binning(TH1D *hist, binning &binningx, binning &binningy);
 
 
   // TGraph 
@@ -330,6 +368,7 @@ namespace ejungwoo
   TF1 *clonef1(TF1 *f1, TString name="", int icopy=0);
   TF1 *fconv(TString name, TF1 *f1, TF1 *f2, double range1=0, double range2=0);
   TF1 *fconv(TF1 *f1, TF1 *f2, double range1=0, double range2=0) { return fconv("",f1,f2,range1,range2); }
+
 
   // TText
   TText *make_t(TText *tt, Short_t a=22);
@@ -393,7 +432,7 @@ namespace ejungwoo
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const double *xbins); ///< simple tree projection starting with name using xbins for x-axis, jumpto_tp1
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with name, jumpto_tp2
   TH1 *tp(TString name,TTree *tree,TString formula="",TCut cut="",TString title="",int nx=-1,int ny=-1); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp3
-  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp33
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy=binning{-1,-1,-1}); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp33
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< tree projection from tree with cuts, return array of histograms with applied cut jumpto_tp4
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title="",int nx=-1,int ny=-1); ///< tree projection from tree with automatic bin range calculation with cuts return array of histograms with applied cut jumpto_tp5
 
@@ -402,6 +441,7 @@ namespace ejungwoo
   int max(int *buffer, int n); ///< get maximum value of buffer
   double max(double *buffer, int n); ///< get maximum value of buffer
   bool vinarray(int value, vector<int> array);
+  bool vinarray(int value, int *array, int n);
 
 
   // name
@@ -1014,6 +1054,7 @@ void ejungwoo::gndiv(int nd) { fAxisNDivisions = nd; }
 void ejungwoo::gstatleft(bool val) { fDrawStatLeft = val; }
 void ejungwoo::glegendleft(bool val) { fDrawLgndLeft = val; }
 void ejungwoo::glegendbyside(bool val) { fDrawLgndBySide = val; }
+void ejungwoo::grootcode(bool val) { fPrintToRootCode = (val?"true":""); }
 
 
 
@@ -1321,6 +1362,9 @@ double ejungwoo::fwhm(TH1 *h)
 
 void ejungwoo::ginitstyle() {
   gStyle->SetTitleFontSize(fTopMainTitleSize);
+
+  if (!fPrintToRootCode.IsNull())
+    cout << "gStyle -> SetTitleFontSize(" << fTopMainTitleSize << ");" << endl;;
 }
 
 bool ejungwoo::check_option(TString from_this, const char *find_this)
@@ -1343,6 +1387,27 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
 
   auto cvs = new TCanvas(name, title, (fCountCvsX+1)*fSpaceXCvs + fXInitCvs, (fCountCvsY+1)*fSpaceYCvs + fYInitCvs, width, height);
 
+  if (!fPrintToRootCode.IsNull())
+  {
+    fPrintToRootCode = "cvs";
+    std::cout << "auto " << fPrintToRootCode << " = new TCanvas("
+      << "\"" << name << "\"," << "\"" << title << "\","
+      << (fCountCvsX+1)*fSpaceXCvs + fXInitCvs << ","
+      << (fCountCvsY+1)*fSpaceYCvs + fYInitCvs << ","
+      << width << "," << height << ");" << std::endl;
+  }
+
+  make_c(cvs);
+
+  if (check_option(options,"x")) { cvs -> SetLogx(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogx();" << std::endl; }
+  if (check_option(options,"y")) { cvs -> SetLogy(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogy();" << std::endl; }
+  if (check_option(options,"z")) { cvs -> SetLogz(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogz();" << std::endl; }
+
+  if(fCanvasArray==nullptr)
+    fCanvasArray=new TObjArray();
+
+  fCanvasArray -> Add(cvs);
+
   ++fCountCvs;
   if (fSetJumpCvs) {
     if ( (fCountCvsX+1)*fSpaceXCvs > fJumpAtX ) {
@@ -1350,14 +1415,9 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
       fYInitCvs += fJumpY;
     }
   }
+
   if (!fFixCvsX) ++fCountCvsX;
   if (!fFixCvsY) ++fCountCvsY;
-
-  make_c(cvs);
-
-  if (check_option(options,"x")) cvs -> SetLogx();
-  if (check_option(options,"y")) cvs -> SetLogy();
-  if (check_option(options,"z")) cvs -> SetLogz();
 
   return cvs;
 }
@@ -1712,6 +1772,15 @@ TCanvas *ejungwoo::make_c(TCanvas *cvs,TString vmtext) //jumpto_makec
   cvs -> Modified();
   cvs -> Update();
 
+  if (!fPrintToRootCode.IsNull()) {
+    std::cout << "cvs -> Modified();" << std::endl;
+    std::cout << "cvs -> Update();" << std::endl;
+    std::cout << "cvs -> SetMargin(" << fLMargin << "," << fRMargin << "," << fBMargin << "," << fTMargin << ");" << std::endl;
+    std::cout << "cvs -> Modified();" << std::endl;
+    std::cout << "cvs -> Update();" << std::endl;
+
+  }
+
   return cvs;
 }
 
@@ -1732,6 +1801,12 @@ TH1D *ejungwoo::new_h(double x1, double x2)
 {
   auto h = new TH1D(Form("frame_%d",fCountFrame++),"", 200, x1, x2);
   return (TH1D *) make_h(h);
+}
+
+TH1D *ejungwoo::new_h(const char *name, titles titles1, binning binning1)
+{
+  auto h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
+  return h;
 }
 
 TH2D *ejungwoo::new_h(double x1, double x2, double y1, double y2)
@@ -1797,6 +1872,7 @@ TGraphErrors *ejungwoo::make_ge(TGraphErrors *graph, int mi, float ms, int mc) /
 
 TH1 *ejungwoo::make_h(int s, TH1 *h, double xc, double yc) { //jumpto_maken
   ginitstyle();
+
   h->SetLabelOffset(xc*0.005,"X");
   h->SetLabelOffset(yc*0.005,"Y");
 
@@ -1823,16 +1899,44 @@ TH1 *ejungwoo::make_h(int s, TH1 *h, double xc, double yc) { //jumpto_maken
 
   free(h);
 
+  if (!fPrintToRootCode.IsNull()) {
+    fPrintToRootCode = "hist";
+
+    std::cout << fPrintToRootCode << " -> SetLabelOffset(" << xc*0.005 << ",\"X\");" << std::endl;
+    std::cout << fPrintToRootCode << " -> SetLabelOffset(" << yc*0.005 << ",\"Y\");" << std::endl;
+
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> CenterTitle();" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> SetTitleOffset(" << xc*fXTitleOffsets[s] << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> SetTitleSize(" << fAxisTitleSizes[s] << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> SetLabelSize(" << fAxisLabelSizes[s] << ");" << std::endl;
+
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> CenterTitle();" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> SetTitleOffset(" << yc*fYTitleOffsets[s] << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> SetTitleSize(" << fAxisTitleSizes[s] << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> SetLabelSize(" << fAxisLabelSizes[s] << ");" << std::endl;
+
+    std::cout << fPrintToRootCode << " -> GetZaxis() -> CenterTitle();" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetZaxis() -> SetTitleSize(" << fAxisTitleSizes[s] << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetZaxis() -> SetLabelSize(" << fZAxisLabelSizes[s] << ");" << std::endl;
+
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> SetTitleFont(" << fTextFont << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> SetTitleFont(" << fTextFont << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetZaxis() -> SetTitleFont(" << fTextFont << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetXaxis() -> SetLabelFont(" << fTextFont << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetYaxis() -> SetLabelFont(" << fTextFont << ");" << std::endl;
+    std::cout << fPrintToRootCode << " -> GetZaxis() -> SetLabelFont(" << fTextFont << ");" << std::endl;
+  }
+
   return h;
 }
 
-void ejungwoo::nobox(TCanvas *cvs, TH1 *hist)
+void ejungwoo::nobox(TCanvas *cvs, TH1 *hist, Color_t color)
 {
-  cvs -> SetFrameLineColor(0);
+  cvs -> SetFrameLineColor(color);
   auto xa = hist -> GetXaxis();
   auto ya = hist -> GetYaxis();
   for (auto a : {xa, ya}) {
-    a -> SetAxisColor(0);
+    a -> SetAxisColor(color);
     a -> SetTickLength(0);
     a -> SetTickSize(0);
     a -> SetLabelOffset(1);
@@ -1976,6 +2080,18 @@ TLegend *ejungwoo::make_l(TCanvas *cvs, TLegend *legend, double x_offset, double
 
   legend -> SetFillStyle(fFillStyleLegend);
   legend -> SetBorderSize(fBorderSizeLegend);
+
+  if (!fPrintToRootCode.IsNull())
+  {
+    std::cout << "legend -> SetTextFont(" << fTextFont << ");" << std::endl;
+    std::cout << "legend -> SetX1(" << x1_legend << ");" << std::endl;
+    std::cout << "legend -> SetX2(" << x2_legend << ");" << std::endl;
+    std::cout << "legend -> SetY1(" << y1_legend << ");" << std::endl;
+    std::cout << "legend -> SetY2(" << y2_legend << ");" << std::endl;
+    std::cout << "legend -> SetFillStyle(" << fFillStyleLegend << ");" << std::endl;
+    std::cout << "legend -> SetBorderSize(" << fBorderSizeLegend << ");" << std::endl;
+  }
+
 
   return legend;
 }
@@ -2374,6 +2490,56 @@ TString ejungwoo::name_fig() { return TString(TString(gSystem->Getenv("PWD"))+"/
 TString ejungwoo::name_data() { return TString(TString(gSystem->Getenv("PWD"))+"/"+fDataDirName+"/"); }
 TString ejungwoo::name_file(TString name) { return TString(name+"."+fVersionOut+".root"); }
 TString ejungwoo::name_full(TString name) { return TString(name_data()+name_file(name)); }
+
+
+TDatabasePDG *ejungwoo::get_db_pdg()
+{
+  TDatabasePDG *db = TDatabasePDG::Instance();
+
+  if (db->GetParticle("deuteron")==nullptr)
+  {
+    cout << "Adding ions to TDatabasePDG" << endl;
+
+    db -> AddParticle("deuteron","d"   , 1.87561 ,1,0, 3,"Ion",1000010020);
+    db -> AddParticle("triton"  ,"t"   , 2.80892 ,1,0, 3,"Ion",1000010030);
+    db -> AddParticle("He3"     ,"he3" , 2.80839 ,1,0, 6,"Ion",1000020030);
+    db -> AddParticle("He4"     ,"he4" , 3.72738 ,1,0, 6,"Ion",1000020040);
+    db -> AddParticle("Li6"     ,"li6" , 5.6     ,1,0, 9,"Ion",1000030060);
+    db -> AddParticle("Li7"     ,"li7" , 6.5     ,1,0, 9,"Ion",1000030070);
+    db -> AddParticle("Be7"     ,"be7" , 6.5     ,1,0,12,"Ion",1000040070);
+    db -> AddParticle("Be9"     ,"be9" , 8.4     ,1,0,12,"Ion",1000040090);
+    db -> AddParticle("Be10"    ,"be10", 9.3     ,1,0,12,"Ion",1000040100);
+    db -> AddParticle("Bo10"    ,"bo10", 9.3     ,1,0,15,"Ion",1000050100);
+    db -> AddParticle("Bo11"    ,"bo11",10.2     ,1,0,15,"Ion",1000050110);
+    db -> AddParticle("C11"     ,"c11" ,10.2     ,1,0,18,"Ion",1000060110);
+    db -> AddParticle("C12"     ,"c12" ,11.17793 ,1,0,18,"Ion",1000060120);
+    db -> AddParticle("C13"     ,"c13" ,12.11255 ,1,0,18,"Ion",1000060130);
+    db -> AddParticle("C14"     ,"c14" ,13.04394 ,1,0,18,"Ion",1000060140);
+    db -> AddParticle("N13"     ,"n13" ,12.1     ,1,0,21,"Ion",1000070130);
+    db -> AddParticle("N14"     ,"n14" ,13.0     ,1,0,21,"Ion",1000070140);
+    db -> AddParticle("N15"     ,"n15" ,14.0     ,1,0,21,"Ion",1000070150);
+    db -> AddParticle("O16"     ,"o16" ,14.89917 ,1,0,24,"Ion",1000080160);
+    db -> AddParticle("O17"     ,"o17" ,15.83459 ,1,0,24,"Ion",1000080170);
+    db -> AddParticle("O18"     ,"o18" ,16.76611 ,1,0,24,"Ion",1000080180);
+  }
+
+  return db;
+}
+
+
+TParticlePDG *ejungwoo::get_particle(TString name)
+{
+  return (get_db_pdg() -> GetParticle(name));
+}
+
+
+TParticlePDG *ejungwoo::get_particle(int pdg)
+{
+  return (get_db_pdg() -> GetParticle(pdg));
+}
+
+
+
 
 TFile *ejungwoo::write(TObject *obj, bool version_control) {
   TFile *file = nullptr;
@@ -2932,6 +3098,15 @@ void ejungwoo::saveall(TString opt) {
   for(auto iacvs=0;iacvs<navcvs;++iacvs) {
     auto ejcvs=(TEJCanvas*)fEJCanvasArray->At(iacvs);
     ejcvs->save(opt);
+  }
+}
+
+void ejungwoo::savecvsall(Option_t *opt) {
+  if (fCanvasArray==nullptr) return;
+  auto navcvs = fCanvasArray->GetEntries();
+  for(auto icvs=0;icvs<navcvs;++icvs) {
+    auto cvs=(TCanvas*)fCanvasArray->At(icvs);
+    ejungwoo::save(cvs,opt);
   }
 }
 
@@ -3506,11 +3681,44 @@ TH1D *ejungwoo::subtract(TH1D *h, TF1 *f1)
   return hist;
 }
 
+ejungwoo::binning ejungwoo::get_binning(TH1D *hist)
+{
+  auto nx = hist -> GetNbinsX();
+  auto xl = hist -> GetXaxis() -> GetBinLowEdge(1);
+  auto xh = hist -> GetXaxis() -> GetBinUpEdge(nx);
+  return binning{nx,xl,xh};
+}
+
+void ejungwoo::get_binning(TH1D *hist, binning &binningx, binning &binningy)
+{
+  auto nx = hist -> GetNbinsX();
+  auto xl = hist -> GetXaxis() -> GetBinLowEdge(1);
+  auto xh = hist -> GetXaxis() -> GetBinUpEdge(nx);
+  binningx = binning{nx,xl,xh};
+
+  auto ny = hist -> GetNbinsY();
+  auto yl = hist -> GetYaxis() -> GetBinLowEdge(1);
+  auto yh = hist -> GetYaxis() -> GetBinUpEdge(ny);
+  binningy = binning{ny,yl,yh};
+}
+
 bool ejungwoo::vinarray(int value, vector<int> array)
 {
   for (auto a : array)
     if (a==value)
       return true;
+
+  return false;
+}
+
+bool ejungwoo::vinarray(int value, int *array, int n)
+{
+  for (auto i=0; i<n; ++i)
+  {
+    auto a = array[i];
+    if (a==value)
+      return true;
+  }
 
   return false;
 }
