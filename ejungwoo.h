@@ -63,8 +63,17 @@ namespace ejungwoo
     TString y;
     TString z;
 
-    TString data() { return main+";"+x+";"+y+";"+z; };
-    void set(TH1 *hist) { hist -> SetTitle(data()); }
+    TString mxyz() { return main+";"+x+";"+y+";"+z; };
+    TString mx() { return main+";"+x; };
+
+    TString xyz() { return TString(";")+x+";"+y+";"+z; };
+    TString xy() { return TString(";")+x+";"+y; };
+
+    TString tx() { return TString(";")+x; };
+    TString ty() { return TString(";")+x; };
+    TString tz() { return TString(";")+x; };
+
+    void set(TH1 *hist) { hist -> SetTitle(mxyz()); }
   };
 
   struct att_line {
@@ -1805,7 +1814,7 @@ TH1D *ejungwoo::new_h(double x1, double x2)
 
 TH1D *ejungwoo::new_h(const char *name, titles titles1, binning binning1)
 {
-  auto h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
+  auto h = new TH1D(name, titles1.mxyz(), binning1.n, binning1.min, binning1.max);
   return h;
 }
 
