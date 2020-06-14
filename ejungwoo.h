@@ -50,42 +50,118 @@ namespace ejungwoo
   class TEJCanvas;
   class THistMeanError;
 
+  class binning {
+    public:
+      int n;
+      double min;
+      double max;
+      bool islog = false;
 
-  struct binning {
-    int n;
-    double min;
-    double max;
+      binning(binning const & binn)
+      : n(binn.n), min(binn.min), max(binn.max), islog(binn.islog) {}
+
+      binning(int n_=-1, double min_=-1, double max_=-1, bool islog_=false)
+      : n(n_), min(min_), max(max_), islog(islog_) {}
+
+      void operator=(const binning binn) {
+        n = binn.n;
+        min = binn.min;
+        max = binn.max;
+      }
   };
 
-  struct titles {
-    TString main;
-    TString x;
-    TString y;
-    TString z;
+  class titles {
+    public:
+      TString main;
+      TString x;
+      TString y;
+      TString z;
 
-    TString mxyz() { return main+";"+x+";"+y+";"+z; };
-    TString mx() { return main+";"+x; };
+      titles(titles const & tt)
+      : main(tt.main), x(tt.x), y(tt.y), z(tt.z) {}
 
-    TString xyz() { return TString(";")+x+";"+y+";"+z; };
-    TString xy() { return TString(";")+x+";"+y; };
+      titles(TString main_="", TString x_="", TString y_="", TString z_="")
+      : main(main_), x(x_), y(y_), z(z_) {}
 
-    TString tx() { return TString(";")+x; };
-    TString ty() { return TString(";")+x; };
-    TString tz() { return TString(";")+x; };
+      titles(const char *x_)
+      : main(""), x(x_), y(""), z("") {}
 
-    void set(TH1 *hist) { hist -> SetTitle(mxyz()); }
+      TString data() { return main+";"+x+";"+y+";"+z; };
+      TString mxyz() { return data(); };
+      TString mx() { return main+";"+x; };
+
+      TString xyz() { return TString(";")+x+";"+y+";"+z; };
+      TString xy() { return TString(";")+x+";"+y; };
+
+      TString tx() { return TString(";")+x; };
+      TString ty() { return TString(";")+x; };
+      TString tz() { return TString(";")+x; };
+
+      void set(TH1 *hist) { hist -> SetTitle(data()); }
+
+      void operator=(const titles & tt) {
+        main = tt.main;
+        x = tt.x;
+        y = tt.y;
+        z = tt.z;
+      }
   };
 
-  struct att_line {
-    Color_t color;
-    Style_t style;
-    Width_t width;
+  class cvshist {
+    public:
+      TCanvas *cvs = nullptr;
+      TH1 *hist = nullptr;
+      cvshist(TCanvas *cvs_, TH1 *hist_) : cvs(cvs_), hist(hist_) {}
   };
 
-  struct att_marker {
-    Color_t color;
-    Style_t style;
-    Size_t  size;
+  class variable {
+    public:
+      TString name = "";
+      TString expression = "";
+      TCut cut = "";
+      titles title;
+      binning binn;
+      binning binn2;
+      TString logs = "";
+
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, binning binn_, binning binn2_)
+      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binn_), binn2(binn2_) {}
+
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, binning binn_)
+      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binn_), binn2() {}
+
+      variable(const char *name_, const char *expression_, const char *cut_, titles title_, binning binn_)
+      : variable(name_, expression_, TCut(cut_), title_, binn_) {}
+
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, int nx, double x1, double x2, int ny, double y1, double y2)
+      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binning(nx,x1,x2)), binn2(binning(ny,y1,y2)) {}
+
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, int nx, double x1, double x2)
+      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binning(nx,x1,x2)), binn2() {}
+
+      variable(const char *name_, const char *expression_, const char *cut_, titles title_, int nx, double x1, double x2)
+      : variable(name_, expression_, TCut(cut_), title_, binning(nx,x1,x2)) {}
+
+      void setlog() { if (binn.islog) logs += "x"; if (binn2.islog) logs += "y"; }
+
+      variable & operator+(const char *logaxes_) {
+        logs += logaxes_;
+        return *this;
+      }
+
+      variable operator+(const variable vary) {
+        TString a_name = this->name + "_" + vary.name;
+        TString a_expression = vary.expression + ":" + this->expression;
+        TCut a_cut = this->cut;
+        titles a_title = titles(this->title.main, this->title.x, vary.title.x);
+        binning a_binn = this->binn;
+        binning a_binn2 = vary.binn;
+
+        return variable(a_name, a_expression, a_cut, a_title, a_binn, a_binn2);
+      }
+
+      bool is1d() { if (binn2.n>0) return false; return true; }
+      bool is2d() { if (binn2.n>0) return true; return false; }
   };
 
   bool fAllowSave = true;
@@ -102,7 +178,7 @@ namespace ejungwoo
   bool fDrawStatLeft = false;
   bool fDrawLgndLeft = false;
   bool fDrawDarkMode = false;
-  bool fDrawLgndBySide = false;
+  bool fDrawLegendBySide = false;
   bool fFixCvsX = false;
   bool fFixCvsY = false;
   bool fSetJumpCvs = false;
@@ -149,6 +225,8 @@ namespace ejungwoo
   double fZAxisLabelSizes[] = {0.030,  0.035, 0.045, 0.05, 0.06};
   double fXTitleOffsets[]   = {1.30 ,  1.15 , 1.00 , 0.80, 0.80};
   double fYTitleOffsets[]   = {1.90 ,  1.45 , 1.30 , 1.10, 1.00};
+  TCut fCurrentCut;
+  TCut fCurrentWeight; // TODO
   TString fHeader;
   TString fFooter;
   TString fVMarkText;
@@ -158,11 +236,14 @@ namespace ejungwoo
   TString fDataDirName = "data";
   TString fPrintToRootCode = "";
 
-  TObjArray *fCanvasArray;
-  TObjArray *fEJCanvasArray;
-  TObjArray *fWrittenFileArray;
+  Color_t color_cenum = 3001;
+
+  TObjArray *fCanvasArray = nullptr;
+  TObjArray *fEJCanvasArray = nullptr;
+  TObjArray *fWrittenFileArray = nullptr;
   std::ifstream fDummyIfstream;
   TFile *fFileDummyGraphics = nullptr;
+  TClonesArray *fParameters = nullptr;
 
 
   /********************************************************/
@@ -185,6 +266,7 @@ namespace ejungwoo
   // global
   void gverbose(int level=1);
   void gverbose(TString level/*="wirds"*/);
+  void gwcut(TCut cut);
   void gender(TString header, TString footer); ///< Set header and footer for file, canvas, savings, and writings
   void gheader(TString header); ///< Set header for file, canvas, savings, and writings
   void gfooter(TString footer); ///< Set footer for file, canvas, savings, and writings
@@ -230,6 +312,8 @@ namespace ejungwoo
   void glegendleft(bool val=true); ///< draw legend on the left side of the canvas
   void glegendbyside(bool val); ///< draw legend by the side of stats
   void grootcode(bool val=true); ///< print to original root code which will work without this namespace
+  void gcolors();
+
 
 
   // version
@@ -287,6 +371,7 @@ namespace ejungwoo
 
   // TCanvas 
   TCanvas* make_c(TCanvas *cvs, TString vmtext=""); // jumpto_makec
+  TCanvas* make_c(TVirtualPad *cvs=(TVirtualPad*)nullptr, TString vmtext="") { if (cvs==nullptr) cvs = gPad; return make_c((TCanvas *)cvs,vmtext); }
   TCanvas* new_c(TString name="", TString title="", double w=0, double h=0, bool withz=0, TString options=""/*"xyz"*/); // jumpto_new_c
   TCanvas* new_c(TString name="", double w=0, double h=0, bool withz=0, TString options=""/*"xyz"*/) { return new_c(name,name,w,h,withz,options); }
   TCanvas* cv(TString name="", double w=600, double h=500, TString options="") { return new_c(name, w, h, false, options); }
@@ -323,6 +408,7 @@ namespace ejungwoo
   TH1 *inv(TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
   TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, double maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
+  TH1 *mult_y(TH1 *h, double mult = 1);
   TH1 *norm_integral(TH1 *h, double normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
   TH1D *cutx(TH1 *hist, int bin1, int bin2); ///< cut TH2 histogram in x from x-bin = bin1~bin2 and project histogram to y
   TH1D *cutx(TH1 *hist, int bin1, int bin2, TGraph *cut_area); ///< same as above but TGraph *cut_area is set to area of cut region in h2;
@@ -343,8 +429,11 @@ namespace ejungwoo
   double fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
   TH1 *free (TH1 *h); ///< make axis labels feel free!
   TH1D *subtract(TH1D *hist,TF1 *f1);
-  binning get_binning(TH1D *hist);
-  void get_binning(TH1D *hist, binning &binningx, binning &binningy);
+  binning get_binning(TH1 *hist);
+  binning get_binningx(TH2 *hist);
+  binning get_binningy(TH2 *hist);
+  void get_binning(TH2 *hist, binning &binningx, binning &binningy);
+  TH1 *scale_xy(TH1 *h, Double_t x1, Double_t x2, Double_t y1=0, Double_t y2=0);
 
 
   // TGraph 
@@ -433,15 +522,20 @@ namespace ejungwoo
 
 
   // TTree
+  void setpar(const char *, int);
+  void setpar(const char *, double);
+  void setpar(const char *, const char *);
   TChain *chain(TChain *c, TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0); ///< create chain useing IDX, VERSIONIN/VERSIONOUT keyword
   TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0) { return chain((new TChain(treename)),treename,filename,from,to,rmlist,numrm); }
   TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); }
   TH1 *tppdg(TString name,TTree *tree,TString formula="pdg",TCut cut=""); ///< draw pdg distribution from PDG incoding
+  ejungwoo::cvshist drawv(ejungwoo::variable var, TTree *tree);
+  TH1 *tp(ejungwoo::variable var, TTree *tree);
   TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with tree, jumpto_tp0
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const double *xbins); ///< simple tree projection starting with name using xbins for x-axis, jumpto_tp1
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with name, jumpto_tp2
   TH1 *tp(TString name,TTree *tree,TString formula="",TCut cut="",TString title="",int nx=-1,int ny=-1); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp3
-  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy=binning{-1,-1,-1}); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp33
+  TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,binning binningx, binning binningy=binning(-1,-1,-1)); ///< tree projection with automatic bin range calculation default nx, ny is 200, jumpto_tp33
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< tree projection from tree with cuts, return array of histograms with applied cut jumpto_tp4
   TObjArray *tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title="",int nx=-1,int ny=-1); ///< tree projection from tree with automatic bin range calculation with cuts return array of histograms with applied cut jumpto_tp5
 
@@ -931,6 +1025,7 @@ void ejungwoo::gverbose(int level) {
     fVerboseRich = true;
   }
 }
+void ejungwoo::gwcut(TCut cut) { fCurrentCut = cut; }
 void ejungwoo::gender(TString header, TString footer) { fHeader = header; fFooter = footer; }
 void ejungwoo::gheader(TString header) { fHeader = header; }
 void ejungwoo::gfooter(TString footer) { fFooter = footer; }
@@ -1062,10 +1157,13 @@ void ejungwoo::gcutall(double r) { fTMargin = r; fRMargin1 = r; fRMarginWithz = 
 void ejungwoo::gndiv(int nd) { fAxisNDivisions = nd; }
 void ejungwoo::gstatleft(bool val) { fDrawStatLeft = val; }
 void ejungwoo::glegendleft(bool val) { fDrawLgndLeft = val; }
-void ejungwoo::glegendbyside(bool val) { fDrawLgndBySide = val; }
+void ejungwoo::glegendbyside(bool val) { fDrawLegendBySide = val; }
 void ejungwoo::grootcode(bool val) { fPrintToRootCode = (val?"true":""); }
 
-
+void ejungwoo::gcolors()
+{
+  new TColor(color_cenum ,0.647,0.000,0.129);
+}
 
 TString ejungwoo::makename(const char *name) {
   return makename(TString(name));
@@ -1370,10 +1468,19 @@ double ejungwoo::fwhm(TH1 *h)
 }
 
 void ejungwoo::ginitstyle() {
+  gStyle->SetTitleFont(fTextFont,"");
+  gStyle->SetTitleFont(fTextFont,"x");
+  gStyle->SetTitleFont(fTextFont,"y");
+  gStyle->SetTitleFont(fTextFont,"z");
   gStyle->SetTitleFontSize(fTopMainTitleSize);
 
-  if (!fPrintToRootCode.IsNull())
+  if (!fPrintToRootCode.IsNull()) {
+    cout << "gStyle -> SetTitleFont(" << fTextFont << ",\"\");" << endl;
+    cout << "gStyle -> SetTitleFont(" << fTextFont << ",\"x\");" << endl;
+    cout << "gStyle -> SetTitleFont(" << fTextFont << ",\"y\");" << endl;
+    cout << "gStyle -> SetTitleFont(" << fTextFont << ",\"z\");" << endl;
     cout << "gStyle -> SetTitleFontSize(" << fTopMainTitleSize << ");" << endl;;
+  }
 }
 
 bool ejungwoo::check_option(TString from_this, const char *find_this)
@@ -1387,6 +1494,20 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
 {
   ginitstyle();
 
+  if (withz)
+  {
+    gStyle -> SetStatX(0.845);
+    gStyle -> SetStatW(0.845-0.5961);
+    gStyle -> SetStatY(0.88);
+    gStyle -> SetStatH(0.88-0.6928);
+  }
+  else {
+    gStyle -> SetStatX(0.945);
+    gStyle -> SetStatW(0.945-0.6581);
+    gStyle -> SetStatY(0.88);
+    gStyle -> SetStatH(0.88-0.6928);
+  }
+
   fRMargin = withz ? fRMarginWithz : fRMargin1;
   name = makename((name.IsNull() ? Form("canvas_%d", fCountCvs) : name));
   name = makename(name);
@@ -1398,7 +1519,7 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
 
   if (!fPrintToRootCode.IsNull())
   {
-    fPrintToRootCode = "cvs";
+    fPrintToRootCode = cvs->GetName();
     std::cout << "auto " << fPrintToRootCode << " = new TCanvas("
       << "\"" << name << "\"," << "\"" << title << "\","
       << (fCountCvsX+1)*fSpaceXCvs + fXInitCvs << ","
@@ -1814,7 +1935,7 @@ TH1D *ejungwoo::new_h(double x1, double x2)
 
 TH1D *ejungwoo::new_h(const char *name, titles titles1, binning binning1)
 {
-  auto h = new TH1D(name, titles1.mxyz(), binning1.n, binning1.min, binning1.max);
+  auto h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
   return h;
 }
 
@@ -1909,7 +2030,7 @@ TH1 *ejungwoo::make_h(int s, TH1 *h, double xc, double yc) { //jumpto_maken
   free(h);
 
   if (!fPrintToRootCode.IsNull()) {
-    fPrintToRootCode = "hist";
+    fPrintToRootCode = h->GetName();
 
     std::cout << fPrintToRootCode << " -> SetLabelOffset(" << xc*0.005 << ",\"X\");" << std::endl;
     std::cout << fPrintToRootCode << " -> SetLabelOffset(" << yc*0.005 << ",\"Y\");" << std::endl;
@@ -2053,7 +2174,7 @@ TLegend *ejungwoo::make_l(TCanvas *cvs, TLegend *legend, double x_offset, double
   //cout << "y  " << y1_legend << " " << y2_legend << endl;
 
   /*
-  if (exist_stat && fDrawLgndBySide) {
+  if (exist_stat && fDrawLegendBySide) {
   }
 
   if (fDrawStatLeft) {
@@ -2071,7 +2192,7 @@ TLegend *ejungwoo::make_l(TCanvas *cvs, TLegend *legend, double x_offset, double
   auto dx_legend = x2_legend - x1_legend;
 
   /*
-  if (fDrawLgndBySide) {
+  if (fDrawLegendBySide) {
   }
   else
     */
@@ -2248,6 +2369,17 @@ TH1 *ejungwoo::norm_max(TH1 *h, double maxto)
   return hist;
 }
 
+TH1 *ejungwoo::mult_y(TH1 *h, double mult)
+{
+  auto hist = (TH1 *) h->Clone();
+  auto nbins = hist->GetXaxis()->GetNbins();
+  for (auto bin = 1; bin <= nbins; ++bin)
+    hist->SetBinContent(bin,hist->GetBinContent(bin)*mult);
+  hist->SetTitle(h->GetTitle());
+
+  return hist;
+}
+
 TH1 *ejungwoo::norm_integral(TH1 *h, double normto)
 {
   auto hist = (TH1 *) h->Clone();
@@ -2285,6 +2417,65 @@ TH1D *ejungwoo::fold0(TH1D *h)
     fold -> SetBinContent(ibin,valueL+valueR);
   }
   return fold;
+}
+
+TH1 *ejungwoo::scale_xy(TH1 *h, Double_t x1, Double_t x2, Double_t y1=0, Double_t y2=0)
+{
+  if (h->InheritsFrom("TH2"))
+  {
+    auto h2 = (TH2 *) h;
+    binning binningx = get_binningx(h2);
+    binning binningy = get_binningy(h2);
+    auto nx = binningx.n;
+    if (x1==0 && x2==0) {
+      x1 = binningx.min;
+      x2 = binningx.max;
+    }
+    auto ny = binningy.n;
+    if (y1==0 && y2==0) {
+      y1 = binningy.min;
+      y2 = binningy.max;
+    }
+
+    auto hist = new TH2D(Form("%s_scaled",h2->GetName()),h2->GetTitle(), nx,x1,x2, ny,y1,y2);
+    for (auto ix=1; ix<=nx; ++ix) {
+      for (auto iy=1; iy<=ny; ++iy) {
+        auto value = h2 -> GetBinContent(ix,iy);
+
+        auto x = hist -> GetXaxis() -> GetBinCenter(ix);
+        auto y = hist -> GetYaxis() -> GetBinCenter(iy);
+        for (auto i=0; i<value; ++i) hist -> Fill(x,y);
+
+        //hist -> Fill(x,y,value);
+
+        //hist -> SetBinContent(ix,iy,value);
+      }
+    }
+    return hist;
+  }
+
+  /*
+  if (h->InheritsFrom("TH1"))
+  {
+    auto h1 = (TH1 *) h;
+    binning binningx = get_binning(h1);
+    auto nx = binningx.n;
+    if (x1==0 && x2==0) {
+      x1 = binningx.min;
+      x2 = binningx.max;
+    }
+
+    auto hist = new TH1D(Form("%s_scaled",h1->GetName()),h1->GetTitle(), nx,x1,x2);
+    for (auto ix=1; ix<=nx; ++ix) {
+      auto value = h1 -> GetBinContent(ix);
+      hist -> SetBinContent(ix,value);
+    }
+
+    return hist;
+  }
+  */
+
+  return (TH1 *) nullptr;
 }
 
 TH1D *ejungwoo::pdg_hist(const char *name, const char *title)
@@ -3294,6 +3485,32 @@ TGraphErrors *ejungwoo::fitgsy(TH1 *hist, int ndivisions, double c, int entry_cu
   return make_ge(graph);
 }
 
+void ejungwoo::setpar(const char *name, int         val) { setpar(name,Form("%d",val)); }
+void ejungwoo::setpar(const char *name, double      val) { setpar(name,Form("%f",val)); }
+void ejungwoo::setpar(const char *name, const char *val) {
+  if (fParameters==nullptr) {
+    fParameters = new TClonesArray("TNamed",20);
+    auto parameter = (TNamed *) fParameters -> ConstructedAt(0);
+    parameter -> SetNameTitle(name,val);
+  }
+  else {
+    TIter next(fParameters);
+    TNamed *parameter = nullptr;
+    bool parameter_exist = false;
+    while ((parameter = (TNamed *) next())) {
+      TString parameter_name = parameter -> GetName();
+      if (parameter_name==name) {
+        parameter -> SetTitle(val);
+        parameter_exist = true;
+      }
+    }
+    if (!parameter_exist) {
+      auto parameter = (TNamed *) fParameters -> ConstructedAt(fParameters->GetEntriesFast());
+      parameter -> SetNameTitle(name,val);
+    }
+  }
+}
+
 TObjArray *ejungwoo::tp(TString name,TTree *tree,TString formula,std::vector<TCut> cuts,TString title,int nx,double x1,double x2,int ny,double y1,double y2) { //jumpto_tp4
   int count=0;
   auto histograms = new TObjArray();
@@ -3395,12 +3612,72 @@ TChain *ejungwoo::chain(TChain *chain, TString treename, TString filename, int f
   return chain;
 }
 
-TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny,double y1,double y2) { //jumpto_tp0
+ejungwoo::cvshist ejungwoo::drawv(ejungwoo::variable var, TTree *tree)
+{
+  auto hist = ejungwoo::tp(var, tree);
+
+  TCanvas *cvs = nullptr;
+  if (hist==nullptr)
+    return cvshist(cvs,hist);
+
+  if (var.is2d()) {
+    cvs = ejungwoo::cc(hist -> GetName(),0,0,var.logs);
+    hist -> Draw("colz");
+  }
+  else {
+    cvs = ejungwoo::cv(hist -> GetName(),0,0,var.logs);
+    hist -> Draw("hist");
+  }
+
+  return cvshist(cvs,hist);
+}
+
+TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree)
+{
+  TString exp0 = var.expression;
+  TString cut0 = var.cut.GetTitle();
+  TString name0 = var.name;
+  TString title0 = var.title.data();
+
+  TNamed *parameter = nullptr;
+  TIter next(fParameters);
+  while ((parameter = (TNamed *) next()))
+  {
+    auto parameter_name = parameter -> GetName();
+    auto parameter_title = parameter -> GetTitle();
+
+    exp0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+    cut0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+    name0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+    title0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+
+    exp0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
+    cut0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
+    name0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
+    title0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
+  }
+
+  return tp(tree, exp0, TCut(cut0), name0, title0, var.binn.n, var.binn.min, var.binn.max, var.binn2.n, var.binn2.min, var.binn2.max);
+}
+
+TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny,double y1,double y2) //jumpto_tp0
+{
+  if (TString(cut.GetName())=="$$(WCUT)"||TString(cut.GetTitle())=="$$(WCUT)")
+    cut = fCurrentCut;
+
+  TString cutname = cut.GetName();
+  TString cuttitle = cut.GetTitle();
+  if (cuttitle=="") { cutname="nocut"; }
+  if (cutname=="CUT") {}
+  else if (!cutname.IsNull())
+    name = name+"_"+cutname;
   name = makename(name);
+
   if (fVerboseInfo) {
     if(!TString(cut).IsNull()) std::cout<<"tpj "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
     else                       std::cout<<"tpj "<<name<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
   }
+
   TH1 *h;
   if(x1==0&&x2==0) {
     if(formula.Index(":")>=0) {
@@ -3445,8 +3722,10 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
       h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
     }
   }
-  auto n=tree->Project(name,formula,cut);
-  if (fVerboseInfo) std::cout<<n<<std::endl;
+
+  auto hentries=tree->Project(name,formula,cut);
+  auto hintegral=h->Integral();
+  if (fVerboseInfo) std::cout<<hentries<<"("<<hintegral<<")"<<std::endl;
   return make_h(h);
 };
 
@@ -3690,25 +3969,41 @@ TH1D *ejungwoo::subtract(TH1D *h, TF1 *f1)
   return hist;
 }
 
-ejungwoo::binning ejungwoo::get_binning(TH1D *hist)
+ejungwoo::binning ejungwoo::get_binning(TH1 *hist)
 {
-  auto nx = hist -> GetNbinsX();
+  auto nn = hist -> GetNbinsX();
   auto xl = hist -> GetXaxis() -> GetBinLowEdge(1);
-  auto xh = hist -> GetXaxis() -> GetBinUpEdge(nx);
-  return binning{nx,xl,xh};
+  auto xh = hist -> GetXaxis() -> GetBinUpEdge(nn);
+  return binning(nn,xl,xh);
 }
 
-void ejungwoo::get_binning(TH1D *hist, binning &binningx, binning &binningy)
+ejungwoo::binning ejungwoo::get_binningx(TH2 *hist)
+{
+  auto nn = hist -> GetNbinsX();
+  auto xl = hist -> GetXaxis() -> GetBinLowEdge(1);
+  auto xh = hist -> GetXaxis() -> GetBinUpEdge(nn);
+  return binning(nn,xl,xh);
+}
+
+ejungwoo::binning ejungwoo::get_binningy(TH2 *hist)
+{
+  auto nn = hist -> GetNbinsY();
+  auto xl = hist -> GetYaxis() -> GetBinLowEdge(1);
+  auto xh = hist -> GetYaxis() -> GetBinUpEdge(nn);
+  return binning(nn,xl,xh);
+}
+
+void ejungwoo::get_binning(TH2 *hist, binning &binningx, binning &binningy)
 {
   auto nx = hist -> GetNbinsX();
   auto xl = hist -> GetXaxis() -> GetBinLowEdge(1);
   auto xh = hist -> GetXaxis() -> GetBinUpEdge(nx);
-  binningx = binning{nx,xl,xh};
+  binningx = binning(nx,xl,xh);
 
   auto ny = hist -> GetNbinsY();
   auto yl = hist -> GetYaxis() -> GetBinLowEdge(1);
   auto yh = hist -> GetYaxis() -> GetBinUpEdge(ny);
-  binningy = binning{ny,yl,yh};
+  binningy = binning(ny,yl,yh);
 }
 
 bool ejungwoo::vinarray(int value, vector<int> array)
