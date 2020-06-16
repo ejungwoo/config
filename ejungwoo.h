@@ -86,6 +86,22 @@ namespace ejungwoo
       titles(const char *x_)
       : main(""), x(x_), y(""), z("") {}
 
+      void set(const char *title, int idx) {
+        if (idx==0) main = title;
+        if (idx==1)    x = title;
+        if (idx==2)    y = title;
+        if (idx==3)    z = title;
+      }
+
+      titles(TH1 *hist) {
+        TString title = hist -> GetTitle();
+        auto array = title.Tokenize(";");
+        auto nn = array -> GetEntries();
+        if (nn>4) nn = 4;
+        for (auto idx=0; idx<nn; ++idx)
+          set(((TObjString *)array->At(idx))->GetString(),idx);
+      }
+
       TString data() { return main+";"+x+";"+y+";"+z; };
       TString mxyz() { return data(); };
       TString mx() { return main+";"+x; };
@@ -97,7 +113,7 @@ namespace ejungwoo
       TString ty() { return TString(";")+x; };
       TString tz() { return TString(";")+x; };
 
-      void set(TH1 *hist) { hist -> SetTitle(data()); }
+      void set_hist(TH1 *hist) { hist -> SetTitle(data()); }
 
       void operator=(const titles & tt) {
         main = tt.main;
@@ -400,8 +416,12 @@ namespace ejungwoo
   TH1 *make_h(TH1 *h) { return make_h(2,h); } ///< make histogram stylish!, jumpto_makeh
   TH1D *new_h(double x1, double x2); ///< make dummy histogram frame
   TH1D *new_h(const char *name, titles titles1, binning binning1);
+  TH2D *new_h(const char *name, titles titles1, binning binning1, binning binning2);
   TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame
   TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph
+  TH1 *new_h(const char *name, TH1 *hist);
+  TH1D *new_h(const char *name, TH1D *hist);
+  TH2D *new_h(const char *name, TH2D *hist);
   TH1D *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
   TH1D *tohist(double *buffer, int i, int f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
   TH1D *tohist(TGraph *graph, Double_t histx1, Double_t histx2);
@@ -551,7 +571,7 @@ namespace ejungwoo
   TObjArray *tok(TString line, TString token); ///< tokenize scv format to array of TObjString. Use tok to get TString of each TObjString
   TString tok(TString line, TString token, int i);
   TString tok(TObjArray *line, int i); ///< Get TString from TObjString "line" of index i
-}; 
+};
 
 class ejungwoo::TEJDrawObject : public TNamed {
   public:
@@ -1939,6 +1959,12 @@ TH1D *ejungwoo::new_h(const char *name, titles titles1, binning binning1)
   return h;
 }
 
+TH2D *ejungwoo::new_h(const char *name, titles titles1, binning binning1, binning binning2)
+{
+  auto h = new TH2D(name, titles1.data(), binning1.n, binning1.min, binning1.max, binning2.n, binning2.min, binning2.max);
+  return h;
+}
+
 TH2D *ejungwoo::new_h(double x1, double x2, double y1, double y2)
 {
   auto h = new TH2D(Form("frame_%d",fCountFrame++),"", 200, x1, x2, 200, y1, y2);
@@ -1958,6 +1984,13 @@ TH2D *ejungwoo::new_h(TGraph *graph)
   if (x2<=x1) { x1 = 0; x2 = 1; }
   if (y2<=y1) { y1 = 0; y2 = 1; }
   return new_h(x1, x2, y1, y2);
+}
+
+TH1 *ejungwoo::new_h(const char *name, TH1 *hist)
+{
+  if (hist -> InheritsFrom("TH2"))
+    return (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binningx((TH2D*) hist), ejungwoo::get_binningy((TH2D*) hist));
+  return (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binning((TH1D*) hist));
 }
 
 TGraph *ejungwoo::new_g(TString name, TString title) { //jumpto_newg
