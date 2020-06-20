@@ -58,16 +58,20 @@ namespace ejungwoo
       bool islog = false;
 
       binning(binning const & binn)
-      : n(binn.n), min(binn.min), max(binn.max), islog(binn.islog) {}
+        : n(binn.n), min(binn.min), max(binn.max), islog(binn.islog) {}
 
       binning(int n_=-1, double min_=-1, double max_=-1, bool islog_=false)
-      : n(n_), min(min_), max(max_), islog(islog_) {}
+        : n(n_), min(min_), max(max_), islog(islog_) {}
 
       void operator=(const binning binn) {
         n = binn.n;
         min = binn.min;
         max = binn.max;
       }
+
+      double w() { return (max-min)/n; }
+      double low_edge(int i) { return min + i*(max-min)/n; }
+      double high_edge(int i) { return min + (i+1)*(max-min)/n; }
   };
 
   class titles {
@@ -78,13 +82,13 @@ namespace ejungwoo
       TString z;
 
       titles(titles const & tt)
-      : main(tt.main), x(tt.x), y(tt.y), z(tt.z) {}
+        : main(tt.main), x(tt.x), y(tt.y), z(tt.z) {}
 
       titles(TString main_="", TString x_="", TString y_="", TString z_="")
-      : main(main_), x(x_), y(y_), z(z_) {}
+        : main(main_), x(x_), y(y_), z(z_) {}
 
       titles(const char *x_)
-      : main(""), x(x_), y(""), z("") {}
+        : main(""), x(x_), y(""), z("") {}
 
       void set(const char *title, int idx) {
         if (idx==0) main = title;
@@ -94,12 +98,10 @@ namespace ejungwoo
       }
 
       titles(TH1 *hist) {
-        TString title = hist -> GetTitle();
-        auto array = title.Tokenize(";");
-        auto nn = array -> GetEntries();
-        if (nn>4) nn = 4;
-        for (auto idx=0; idx<nn; ++idx)
-          set(((TObjString *)array->At(idx))->GetString(),idx);
+        main = hist -> GetTitle();
+        x = hist -> GetXaxis() -> GetTitle();
+        y = hist -> GetYaxis() -> GetTitle();
+        z = hist -> GetZaxis() -> GetTitle();
       }
 
       TString data() { return main+";"+x+";"+y+";"+z; };
@@ -140,25 +142,21 @@ namespace ejungwoo
       binning binn2;
       TString logs = "";
 
-      variable(const char *name_, const char *expression_, TCut cut_, titles title_, binning binn_, binning binn2_)
-      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binn_), binn2(binn2_) {}
+      void setpar();
 
-      variable(const char *name_, const char *expression_, TCut cut_, titles title_, binning binn_)
-      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binn_), binn2() {}
+      variable(const char *name_, titles title_, binning binn_, binning binn2_=binning())
+        : name(name_), title(title_), binn(binn_), binn2(binn2_) {}
 
-      variable(const char *name_, const char *expression_, const char *cut_, titles title_, binning binn_)
-      : variable(name_, expression_, TCut(cut_), title_, binn_) {}
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, binning binn_, binning binn2_=binning())
+        : name(name_), expression(expression_), cut(cut_), title(title_), binn(binn_), binn2(binn2_) { setpar(); }
 
-      variable(const char *name_, const char *expression_, TCut cut_, titles title_, int nx, double x1, double x2, int ny, double y1, double y2)
-      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binning(nx,x1,x2)), binn2(binning(ny,y1,y2)) {}
+      variable(const char *name_, const char *expression_, TCut cut_, titles title_, int nx, double x1, double x2, int ny=-1, double y1=-1, double y2=-1)
+        : name(name_), expression(expression_), cut(cut_), title(title_), binn(binning(nx,x1,x2)), binn2(binning(ny,y1,y2)) { setpar(); }
 
-      variable(const char *name_, const char *expression_, TCut cut_, titles title_, int nx, double x1, double x2)
-      : name(name_), expression(expression_), cut(cut_), title(title_), binn(binning(nx,x1,x2)), binn2() {}
-
-      variable(const char *name_, const char *expression_, const char *cut_, titles title_, int nx, double x1, double x2)
-      : variable(name_, expression_, TCut(cut_), title_, binning(nx,x1,x2)) {}
-
-      void setlog() { if (binn.islog) logs += "x"; if (binn2.islog) logs += "y"; }
+      void setlog() {
+        if (binn.islog) logs += "x";
+        if (binn2.islog) logs += "y";
+      }
 
       variable & operator+(const char *logaxes_) {
         logs += logaxes_;
@@ -178,7 +176,10 @@ namespace ejungwoo
 
       bool is1d() { if (binn2.n>0) return false; return true; }
       bool is2d() { if (binn2.n>0) return true; return false; }
+
+      TH1 *new_h();
   };
+
 
   bool fAllowSave = true;
   bool fAllowWrite = true;
@@ -230,7 +231,8 @@ namespace ejungwoo
   double fWidthPerLengthLegend = 0.008;
   double fHeightPerEntryLegend = 0.05;
   double fTMargin = 0.12;
-  double fBMargin = 0.16;
+  //double fBMargin = 0.16;
+  double fBMargin = 0.17;
   double fLMargin = 0.19;
   double fRMargin = 0.055;
   double fRMargin1 = 0.055;
@@ -240,7 +242,7 @@ namespace ejungwoo
   double fAxisLabelSizes[]  = {0.045,  0.05 , 0.055, 0.07, 0.09};
   double fZAxisLabelSizes[] = {0.030,  0.035, 0.045, 0.05, 0.06};
   double fXTitleOffsets[]   = {1.30 ,  1.15 , 1.00 , 0.80, 0.80};
-  double fYTitleOffsets[]   = {1.90 ,  1.45 , 1.30 , 1.10, 1.00};
+  double fYTitleOffsets[]   = {1.90 ,  1.45 , 1.27 , 1.10, 1.00};
   TCut fCurrentCut;
   TCut fCurrentWeight; // TODO
   TString fHeader;
@@ -266,13 +268,24 @@ namespace ejungwoo
   //int fNumColors = 3;
   //Color_t fColorList[] = {kBlack, kPink+7, kGreen+1, kBlue-4};
 
-  int fNumColors = 9;
+  int fNumColors = 7;
   Color_t fColorList[] = {
-    kBlack, kOrange+8, kOrange, kSpring+7, kSpring-6, kAzure+7, kBlue, kViolet-5, kPink+7, kGray+1
+    //kBlack, kOrange+8, kOrange, kSpring+7, kSpring-6, kAzure+7, kBlue, kViolet-5, kPink+7, kGray+1
+
+    //kBlack, kOrange+8, kSpring-6, kAzure+7, kBlue, kViolet-5, kPink+7, kGray+1
+
+    kGray+2, kRed, kSpring-6, kAzure+7, kViolet-5, kPink+7, kGray+1
+
     //kOrange-4, kOrange+6, kOrange+8, kOrange-3, kOrange, kYellow,
     //kSpring+8, kSpring+7, kSpring-5, kTeal+5, kSpring-6, kTeal+3, kCyan+3, kCyan+2, kCyan+1,
     //kAzure+7, kBlue-4, kBlue, kBlue+1, kViolet+4, kViolet-6, kViolet-5,
     //kPink+3, kRed+1, kRed, kRed-4, kPink-2, kPink+7, kOrange+3, kSpring+6, kSpring+1,
+  };
+
+  int fNumMarkers = 5;
+  Marker_t fMarkerList[] = {
+    //20,21,22,29,34
+    24,25,26,30,28
   };
 
 
@@ -372,6 +385,7 @@ namespace ejungwoo
   void markers(); ///< show markers
   void colorlist(); ///< draw color list used in function colori()
   Color_t colori(int icolor); ///< get selected list of root colors. Run function colorlist() to see color list. Or see fColorList.
+  Marker_t markeri(int imarker);
 
 
   // Option_t 
@@ -414,14 +428,11 @@ namespace ejungwoo
   //TH1
   TH1 *make_h(int s, TH1 *h, double xc=1., double yc=1.); ///< make histogram stylish! (s)bigger!, jumpto_maken
   TH1 *make_h(TH1 *h) { return make_h(2,h); } ///< make histogram stylish!, jumpto_makeh
-  TH1D *new_h(double x1, double x2); ///< make dummy histogram frame
-  TH1D *new_h(const char *name, titles titles1, binning binning1);
-  TH2D *new_h(const char *name, titles titles1, binning binning1, binning binning2);
-  TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame
-  TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph
-  TH1 *new_h(const char *name, TH1 *hist);
-  TH1D *new_h(const char *name, TH1D *hist);
-  TH2D *new_h(const char *name, TH2D *hist);
+  TH1 *new_h(const char *name, TH1 *hist); ///< jumpto_new_h1
+  TH1 *new_h(const char *name, titles titles1, binning binning1, binning binning2=binning()); ///< jumpto_new_h2
+  TH1D *new_h(double x1, double x2); ///< make dummy histogram frame jumpto_new_h3
+  TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame jumpto_new_h4
+  TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph jumpto_new_h5
   TH1D *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
   TH1D *tohist(double *buffer, int i, int f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
   TH1D *tohist(TGraph *graph, Double_t histx1, Double_t histx2);
@@ -544,6 +555,7 @@ namespace ejungwoo
   // TTree
   void setpar(const char *, int);
   void setpar(const char *, double);
+  void setpar(const char *, Long64_t);
   void setpar(const char *, const char *);
   TChain *chain(TChain *c, TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0); ///< create chain useing IDX, VERSIONIN/VERSIONOUT keyword
   TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0) { return chain((new TChain(treename)),treename,filename,from,to,rmlist,numrm); }
@@ -1008,6 +1020,17 @@ class ejungwoo::THistMeanError : public TObject {
     double GetSigmaY() { return fSigmaY; }
 };
 
+TH1 *ejungwoo::variable::new_h()
+{
+  return ejungwoo::new_h(name,title,binn,binn2);
+}
+
+void ejungwoo::variable::setpar()
+{
+  return ejungwoo::setpar(name,expression);
+}
+
+
 
 
 /**
@@ -1065,7 +1088,7 @@ void ejungwoo::gfstat(TString opt) {
 }
 void ejungwoo::gzcolor(int opt) {
   if (fVerboseInfo) std::cout<<"gzcolor("<<opt<<") >> 0:kBird, 1:kRainBow, 2:kDeepSea, 3:kAvocado, 4:kBlueGreenYellow, 5:kBrownCyan, else:kGreyScale"<<std::endl;
-  /**/ if(opt == 0) gStyle->SetPalette(kBird);
+  /**/ if(opt == 0) gStyle -> SetPalette(kBird);
   else if(opt == 1) gStyle -> SetPalette(kRainBow);
   else if(opt == 2) gStyle -> SetPalette(kDeepSea);
   else if(opt == 3) gStyle -> SetPalette(kAvocado);
@@ -1115,6 +1138,8 @@ void ejungwoo::gversionout(TString val) {
   if (fVerboseInfo) std::cout<<"fVersionOut=["<<fVersionOut<<"]"<<std::endl;
 }
 void ejungwoo::gvmark(TString vmtext) {
+  if (fVMarkText == vmtext)
+    return;
   if (vmtext.IsNull()) fVMarkText = fVersionOut;
   else fVMarkText = vmtext;
   if (fVerboseInfo)
@@ -1269,6 +1294,12 @@ Color_t ejungwoo::colori(int icolor)
 {
   icolor = icolor - fNumColors*(icolor/fNumColors);
   return fColorList[icolor];
+}
+
+Marker_t ejungwoo::markeri(int imarker)
+{
+  imarker = imarker - fNumMarkers*(imarker/fNumMarkers);
+  return fMarkerList[imarker];
 }
 
 TGraph *ejungwoo::sumf(std::vector<TF1*> &fs, int npx)
@@ -1947,31 +1978,40 @@ TGraph *ejungwoo::make_g(TGraph *graph, int mi, float ms, int mc) { //jumpto_mak
   return graph;
 }
 
-TH1D *ejungwoo::new_h(double x1, double x2)
+TH1 *ejungwoo::new_h(const char *name, TH1 *hist) // jumpto_new_h1
+{
+  TH1 *hc = nullptr;
+  if (hist -> InheritsFrom("TH2"))
+    hc = (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binningx((TH2D*) hist), ejungwoo::get_binningy((TH2D*) hist));
+  else
+    hc = (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binning((TH1D*) hist));
+  hc -> SetTitle(hist -> GetTitle());
+  return make_h(hc);
+}
+
+TH1 *ejungwoo::new_h(const char *name, titles titles1, binning binning1, binning binning2) // jumpto_new_h2
+{
+  TH1 *h = nullptr;
+
+  if (binning2.n==-1) h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
+  else                h = new TH2D(name, titles1.data(), binning1.n, binning1.min, binning1.max, binning2.n, binning2.min, binning2.max);
+
+  return make_h(h);
+}
+
+TH1D *ejungwoo::new_h(double x1, double x2) // jumpto_new_h3
 {
   auto h = new TH1D(Form("frame_%d",fCountFrame++),"", 200, x1, x2);
   return (TH1D *) make_h(h);
 }
 
-TH1D *ejungwoo::new_h(const char *name, titles titles1, binning binning1)
-{
-  auto h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
-  return h;
-}
-
-TH2D *ejungwoo::new_h(const char *name, titles titles1, binning binning1, binning binning2)
-{
-  auto h = new TH2D(name, titles1.data(), binning1.n, binning1.min, binning1.max, binning2.n, binning2.min, binning2.max);
-  return h;
-}
-
-TH2D *ejungwoo::new_h(double x1, double x2, double y1, double y2)
+TH2D *ejungwoo::new_h(double x1, double x2, double y1, double y2) // jumpto_new_h4
 {
   auto h = new TH2D(Form("frame_%d",fCountFrame++),"", 200, x1, x2, 200, y1, y2);
   return (TH2D *) make_h(h);
 }
 
-TH2D *ejungwoo::new_h(TGraph *graph)
+TH2D *ejungwoo::new_h(TGraph *graph) // jumpto_new_h5
 {
   double x1, x2, y1, y2;
   graph -> ComputeRange(x1,y1,x2,y2);
@@ -1984,13 +2024,6 @@ TH2D *ejungwoo::new_h(TGraph *graph)
   if (x2<=x1) { x1 = 0; x2 = 1; }
   if (y2<=y1) { y1 = 0; y2 = 1; }
   return new_h(x1, x2, y1, y2);
-}
-
-TH1 *ejungwoo::new_h(const char *name, TH1 *hist)
-{
-  if (hist -> InheritsFrom("TH2"))
-    return (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binningx((TH2D*) hist), ejungwoo::get_binningy((TH2D*) hist));
-  return (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binning((TH1D*) hist));
 }
 
 TGraph *ejungwoo::new_g(TString name, TString title) { //jumpto_newg
@@ -2050,6 +2083,7 @@ TH1 *ejungwoo::make_h(int s, TH1 *h, double xc, double yc) { //jumpto_maken
   h->GetYaxis()->SetLabelSize(fAxisLabelSizes[s]);
 
   h->GetZaxis()->CenterTitle();
+  h->GetZaxis()->SetTitleOffset(-0.2);
   h->GetZaxis()->SetTitleSize(fAxisTitleSizes[s]);
   h->GetZaxis()->SetLabelSize(fZAxisLabelSizes[s]);
 
@@ -3520,6 +3554,7 @@ TGraphErrors *ejungwoo::fitgsy(TH1 *hist, int ndivisions, double c, int entry_cu
 
 void ejungwoo::setpar(const char *name, int         val) { setpar(name,Form("%d",val)); }
 void ejungwoo::setpar(const char *name, double      val) { setpar(name,Form("%f",val)); }
+void ejungwoo::setpar(const char *name, Long64_t    val) { setpar(name,Form("%lld",val)); }
 void ejungwoo::setpar(const char *name, const char *val) {
   if (fParameters==nullptr) {
     fParameters = new TClonesArray("TNamed",20);
@@ -3668,36 +3703,35 @@ ejungwoo::cvshist ejungwoo::drawv(ejungwoo::variable var, TTree *tree)
 TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree)
 {
   TString exp0 = var.expression;
-  TString cut0 = var.cut.GetTitle();
+  TString cutn0 = var.cut.GetName();
+  TString cutt0 = var.cut.GetTitle();
   TString name0 = var.name;
   TString title0 = var.title.data();
 
-  TNamed *parameter = nullptr;
-  TIter next(fParameters);
-  while ((parameter = (TNamed *) next()))
-  {
-    auto parameter_name = parameter -> GetName();
-    auto parameter_title = parameter -> GetTitle();
-
-    exp0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
-    cut0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
-    name0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
-    title0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
-
-    exp0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
-    cut0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
-    name0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
-    title0.ReplaceAll(TString("$$")+parameter_name+" ",parameter_title);
+  if (TString(var.cut.GetName())=="$$(WCUT)"||TString(var.cut.GetTitle())=="$$(WCUT)") {
+    cutn0 = fCurrentCut.GetName();
+    cutt0 = fCurrentCut.GetTitle();
   }
 
-  return tp(tree, exp0, TCut(cut0), name0, title0, var.binn.n, var.binn.min, var.binn.max, var.binn2.n, var.binn2.min, var.binn2.max);
+  TIter next(fParameters);
+  for (auto i : {0,1}) {
+    next.Begin();
+    while (TNamed *parameter = (TNamed *) next()) {
+      auto parameter_name = parameter -> GetName();
+      auto parameter_title = parameter -> GetTitle();
+
+      exp0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+      cutt0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+      name0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+      title0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+    }
+  }
+
+  return tp(tree, exp0, TCut(cutn0,cutt0), name0, title0, var.binn.n, var.binn.min, var.binn.max, var.binn2.n, var.binn2.min, var.binn2.max);
 }
 
 TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny,double y1,double y2) //jumpto_tp0
 {
-  if (TString(cut.GetName())=="$$(WCUT)"||TString(cut.GetTitle())=="$$(WCUT)")
-    cut = fCurrentCut;
-
   TString cutname = cut.GetName();
   TString cuttitle = cut.GetTitle();
   if (cuttitle=="") { cutname="nocut"; }
