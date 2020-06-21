@@ -3563,9 +3563,8 @@ void ejungwoo::setpar(const char *name, const char *val) {
   }
   else {
     TIter next(fParameters);
-    TNamed *parameter = nullptr;
     bool parameter_exist = false;
-    while ((parameter = (TNamed *) next())) {
+    while (TNamed *parameter = (TNamed *) next()) {
       TString parameter_name = parameter -> GetName();
       if (parameter_name==name) {
         parameter -> SetTitle(val);
@@ -3715,10 +3714,10 @@ TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree)
 
   TIter next(fParameters);
   for (auto i : {0,1}) {
-    next.Begin();
+    next.Reset();
     while (TNamed *parameter = (TNamed *) next()) {
-      auto parameter_name = parameter -> GetName();
-      auto parameter_title = parameter -> GetTitle();
+      TString parameter_name = parameter -> GetName();
+      TString parameter_title = parameter -> GetTitle();
 
       exp0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
       cutt0.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
