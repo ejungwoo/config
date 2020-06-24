@@ -55,23 +55,44 @@ namespace ejungwoo
       int n;
       double min;
       double max;
+      double w;
       bool islog = false;
 
       binning(binning const & binn)
-        : n(binn.n), min(binn.min), max(binn.max), islog(binn.islog) {}
+        : n(binn.n), min(binn.min), max(binn.max), w((max-min)/n), islog(binn.islog) {}
 
       binning(int n_=-1, double min_=-1, double max_=-1, bool islog_=false)
-        : n(n_), min(min_), max(max_), islog(islog_) {}
+        : n(n_), min(min_), max(max_), w((max-min)/n), islog(islog_) {}
+
+      binning(TH1 *hist, int i=0) {
+        if (i==1) {
+          n = hist -> GetNbinsY();
+          min = hist -> GetYaxis() -> GetBinLowEdge(1);
+          max = hist -> GetYaxis() -> GetBinUpEdge(n);
+        }
+        else if (i==2) {
+          n = hist -> GetNbinsZ();
+          min = hist -> GetZaxis() -> GetBinLowEdge(1);
+          max = hist -> GetZaxis() -> GetBinUpEdge(n);
+        }
+        else {
+          n = hist -> GetNbinsX();
+          min = hist -> GetXaxis() -> GetBinLowEdge(1);
+          max = hist -> GetXaxis() -> GetBinUpEdge(n);
+        }
+
+        w = (max-min)/n;
+      }
 
       void operator=(const binning binn) {
         n = binn.n;
         min = binn.min;
         max = binn.max;
+        w = binn.w;
       }
 
-      double w() { return (max-min)/n; }
-      double low_edge(int i) { return min + i*(max-min)/n; }
-      double high_edge(int i) { return min + (i+1)*(max-min)/n; }
+      double low_edge(int i=1) { return min+(i-1)*(max-min)/n; }
+      double high_edge(int i=-1) { if (i==-1) i=n; return min+(i)*(max-min)/n; }
   };
 
   class titles {
@@ -210,7 +231,6 @@ namespace ejungwoo
   int fJumpY = 0;
   int fCountHist = 0;
   int fCountGraph = 0;
-  int fCountFrame = 0;
   int fTextFont = 132;
   int fNumAxisPDGs = 26;
   int fFillStylePave = 0;
@@ -428,18 +448,20 @@ namespace ejungwoo
   //TH1
   TH1 *make_h(int s, TH1 *h, double xc=1., double yc=1.); ///< make histogram stylish! (s)bigger!, jumpto_maken
   TH1 *make_h(TH1 *h) { return make_h(2,h); } ///< make histogram stylish!, jumpto_makeh
-  TH1 *new_h(const char *name, TH1 *hist); ///< jumpto_new_h1
+  TH1 *copy_h(const char *name, TH1 *hist, double scale=1.); ///< jumpto_copy_h1
+  TH1 *new_h(const char *name, const char *title, int nx, double x1, double x2, int ny=-1, double y1=-1, double y2=-1); ///< jumpto_new_hoooo
+  TH1 *new_h(const char *name, TH1 *hist); ///< jumpto_new_h1 -> jumpto_new_h2
   TH1 *new_h(const char *name, titles titles1, binning binning1, binning binning2=binning()); ///< jumpto_new_h2
-  TH1D *new_h(double x1, double x2); ///< make dummy histogram frame jumpto_new_h3
-  TH2D *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame jumpto_new_h4
-  TH2D *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph jumpto_new_h5
+  TH1 *new_h(double x1, double x2); ///< make dummy histogram frame jumpto_new_h3
+  TH1 *new_h(double x1, double x2, double y1, double y2); ///< make dummy histogram frame jumpto_new_h4
+  TH1 *new_h(TGraph *graph); ///< make dummy histogram frame from range computed from the graph jumpto_new_h5
   TH1D *tohist(double *buffer, int n, TString name = "", TString title = ""); ///< make histogram with given buffer
   TH1D *tohist(double *buffer, int i, int f, TString name = "", TString title = ""); ///< make histogram with given buffer in range i->f
   TH1D *tohist(TGraph *graph, Double_t histx1, Double_t histx2);
   TH1 *inv(TH1 *h); ///< recreate histogram from "x vs y" to "y to x"
   TH1 *dndx(TH1 *h); ///< make graph y axis to dn/dx where n is number of entries
   TH1 *norm_max(TH1 *h, double maxto = 1); ///< normalize maximum value of histogram to maxto(=1 by default)
-  TH1 *mult_y(TH1 *h, double mult = 1);
+  TH1 *mult_y(TH1 *h, double mult = 1) { return copy_h("",h,mult); }
   TH1 *norm_integral(TH1 *h, double normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
   TH1D *cutx(TH1 *hist, int bin1, int bin2); ///< cut TH2 histogram in x from x-bin = bin1~bin2 and project histogram to y
   TH1D *cutx(TH1 *hist, int bin1, int bin2, TGraph *cut_area); ///< same as above but TGraph *cut_area is set to area of cut region in h2;
@@ -1775,10 +1797,10 @@ TCanvas *ejungwoo::div0(TCanvas *c,int nx,int ny)
         else             c->cd(i)->SetMargin(       0,       0,fBMargin,0);//fTMargin);
       }
       else if (iy==1) {
-        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,0,0);//fTMargin);
-        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,0,0);//fTMargin);
-        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,0,0);//fTMargin);
-        else               c->cd(i)->SetMargin(       0,       0,0,0);//fTMargin);
+        if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,0,fTMargin);
+        else if (ix==1)    c->cd(i)->SetMargin(fLMargin,       0,0,fTMargin);
+        else if (ix==nx)   c->cd(i)->SetMargin(       0,fRMargin,0,fTMargin);
+        else               c->cd(i)->SetMargin(       0,       0,0,fTMargin);
       }
       else if (iy==ny) {
         if (ix==1&&ix==nx) c->cd(i)->SetMargin(fLMargin,fRMargin,fBMargin,0);
@@ -1978,40 +2000,48 @@ TGraph *ejungwoo::make_g(TGraph *graph, int mi, float ms, int mc) { //jumpto_mak
   return graph;
 }
 
-TH1 *ejungwoo::new_h(const char *name, TH1 *hist) // jumpto_new_h1
+TH1 *ejungwoo::copy_h(const char *name, TH1 *hist, double scale=1.) ///< jumpto_copy_h1
 {
-  TH1 *hc = nullptr;
-  if (hist -> InheritsFrom("TH2"))
-    hc = (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binningx((TH2D*) hist), ejungwoo::get_binningy((TH2D*) hist));
-  else
-    hc = (TH1 *) ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binning((TH1D*) hist));
-  hc -> SetTitle(hist -> GetTitle());
-  return make_h(hc);
+  if (TString(name)=="")
+    name = Form("hist_%d",fCountHist++);
+  auto histc = (TH1 *) hist -> Clone(name);
+  histc -> SetTitle(hist->GetTitle());
+
+  auto nbins = hist -> GetXaxis() -> GetNbins();
+  for (auto bin=1; bin<=nbins; ++bin)
+    histc -> SetBinContent(bin,histc->GetBinContent(bin)*scale);
+
+  return histc;
 }
 
-TH1 *ejungwoo::new_h(const char *name, titles titles1, binning binning1, binning binning2) // jumpto_new_h2
+TH1 *ejungwoo::new_h(const char *name, const char *title, int nx, double x1, double x2, int ny, double y1, double y2) ///< jumpto_new_hoooo
 {
-  TH1 *h = nullptr;
+  if (TString(name).IsNull()) name = Form("hist_%d",fCountHist++);
+  if (TString(title).IsNull()) title = name;
 
-  if (binning2.n==-1) h = new TH1D(name, titles1.data(), binning1.n, binning1.min, binning1.max);
-  else                h = new TH2D(name, titles1.data(), binning1.n, binning1.min, binning1.max, binning2.n, binning2.min, binning2.max);
+  TH1 *h = nullptr;
+  if (ny<0) h = new TH1D(name, title, nx, x1, x2);
+  else      h = new TH2D(name, title, nx, x1, x2, ny, y1, y2);
 
   return make_h(h);
 }
 
-TH1D *ejungwoo::new_h(double x1, double x2) // jumpto_new_h3
+TH1 *ejungwoo::new_h(const char *name, TH1 *hist) // jumpto_new_h1 -> jumpto_new_h2
 {
-  auto h = new TH1D(Form("frame_%d",fCountFrame++),"", 200, x1, x2);
-  return (TH1D *) make_h(h);
+  if (hist -> InheritsFrom("TH2"))
+    return ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binningx((TH2D*) hist), ejungwoo::get_binningy((TH2D*) hist));
+  else
+    return ejungwoo::new_h(name, ejungwoo::titles(hist), ejungwoo::get_binning((TH1D*) hist));
 }
 
-TH2D *ejungwoo::new_h(double x1, double x2, double y1, double y2) // jumpto_new_h4
-{
-  auto h = new TH2D(Form("frame_%d",fCountFrame++),"", 200, x1, x2, 200, y1, y2);
-  return (TH2D *) make_h(h);
+TH1 *ejungwoo::new_h(const char *name, titles titles1, binning binning1, binning binning2) { // jumpto_new_h2
+  return ejungwoo::new_h(name, titles1.data(), binning1.n, binning1.min, binning1.max, binning2.n, binning2.min, binning2.max);
 }
 
-TH2D *ejungwoo::new_h(TGraph *graph) // jumpto_new_h5
+TH1 *ejungwoo::new_h(double x1, double x2) { return ejungwoo::new_h("","",200,x1,x2); } // jumpto_new_h3
+TH1 *ejungwoo::new_h(double x1, double x2, double y1, double y2) { return ejungwoo::new_h("","",200,x1,x2,200,y1,y2); } // jumpto_new_h4
+
+TH1 *ejungwoo::new_h(TGraph *graph) // jumpto_new_h5
 {
   double x1, x2, y1, y2;
   graph -> ComputeRange(x1,y1,x2,y2);
@@ -2351,7 +2381,7 @@ TGraphErrors *ejungwoo::tograph(TString filename)
 
 TH1D *ejungwoo::tohist(double *buffer, int n, TString name, TString title)
 {
-  if(name.IsNull()) name=Form("hist-%d",fCountHist);
+  if(name.IsNull()) name=Form("hist_%d",fCountHist);
   auto hist = new TH1D(name, title, n, 0, n+1);
   for (auto i = 0; i < n; ++i)
     hist->SetBinContent(i+1,buffer[i]);
@@ -2361,7 +2391,7 @@ TH1D *ejungwoo::tohist(double *buffer, int n, TString name, TString title)
 
 TH1D *ejungwoo::tohist(double *buffer, int i, int f, TString name, TString title)
 {
-  if(name.IsNull()) name=Form("hist-%d",fCountHist);
+  if(name.IsNull()) name=Form("hist_%d",fCountHist);
   auto hist = new TH1D(name, title, f-i+1, i, f+1);
   for (auto bin = i; bin < f+1; ++bin)
     hist->SetBinContent(bin+1-i,buffer[bin]);
@@ -2431,17 +2461,6 @@ TH1 *ejungwoo::norm_max(TH1 *h, double maxto)
   for (auto bin = 1; bin <= nbins; ++bin)
     hist->SetBinContent(bin,hist->GetBinContent(bin)*maxto/valmax);
   //hist->SetTitle(Form(";%s;Normalized Max",h->GetXaxis()->GetTitle()));
-  hist->SetTitle(h->GetTitle());
-
-  return hist;
-}
-
-TH1 *ejungwoo::mult_y(TH1 *h, double mult)
-{
-  auto hist = (TH1 *) h->Clone();
-  auto nbins = hist->GetXaxis()->GetNbins();
-  for (auto bin = 1; bin <= nbins; ++bin)
-    hist->SetBinContent(bin,hist->GetBinContent(bin)*mult);
   hist->SetTitle(h->GetTitle());
 
   return hist;
@@ -3736,7 +3755,7 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
   if (cuttitle=="") { cutname="nocut"; }
   if (cutname=="CUT") {}
   else if (!cutname.IsNull())
-    name = name+"_"+cutname;
+    name = name+"__"+cutname;
   name = makename(name);
 
   if (fVerboseInfo) {
