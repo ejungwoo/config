@@ -50,57 +50,70 @@ namespace ejungwoo
   class ecanvas;
   class histstat;
   class variable;
+
   class binning {
     public:
-      int n = 0;
-      double min = 0;
-      double max = 0;
-      double w = 0;
-      bool islog = 0;
-      int idx = 0;
-      double value = 0;
+      int n = 0; ///< number of bins
+      double min = 0; ///< lower bound
+      double max = 0; ///< upper bound
+      double w = 0; ///< binning space width
+      bool islog = 0; ///< set log?
+      int idx = 0; ///< index for iteration
+      double value = 0; ///< value will be set after iteration using next(), back(), nextc()
 
       binning(binning const & binn) : n(binn.n), min(binn.min), max(binn.max), w((max-min)/n), islog(binn.islog) {}
       binning(int n_=-1, double min_=0, double max_=0, double w_=-1, bool islog_=false);
       binning(TH1 *hist, int i=0);
-      void setw(double w_);
-      void reset();
-      void end();
-      double next();
-      double back();
-      double nextc();
-      double low_edge(int i=1);
-      double high_edge(int i=-1);
-      int geti(double invalue);
-      void operator=(const binning binn);
-      TString print(bool show=true);
+      void setw(double w_); ///< set width of the bin
+      void reset(); ///< reset iteration to start from first bin
+      void end(); ///< reset iteration to start from last bin
+      double next(); ///< iterate to next (+) bin, update value = lower edge of the bin. return false if iteration reaches end
+      double back(); ///< iterate to previous (-) bin, update value = high edge of the bin. return false if iteration reaches 0
+      double nextc(); ///< iterate to next (+) bin, update value = center the bin
+      double low_edge(int i=1) const; ///< return low edge of the i-bin (i=1~n)
+      double high_edge(int i=-1) const; ///< return high edge of the i-bin (i:1~n)
+      int geti(double invalue) const; ///< find bin corresponding to invalue
+      double getc(int ibin) const; ///< find bin center value
+      TString print(bool show=true) const; ///< print
+      void operator=(const binning binn); ///< copy binning
   };
 
   class titles {
     public:
-      TString main;
-      TString x;
-      TString y;
-      TString z;
-      void set(const char *title, int idx);
-      void set(const char *title);
+      TString main; ///< main title
+      TString x; ///< x-axis title
+      TString y; ///< y-axis title
+      TString z; ///< z-axis title
+
+      void set(const char *title, int idx); ///< set title by idx(0:main, 1:x, 2:y, 3:z)
+      void set(const char *title); ///< set title separated by : or ;
       titles(titles const & tt) : main(tt.main), x(tt.x), y(tt.y), z(tt.z) {}
       titles(TString main_="", TString x_="", TString y_="", TString z_="") : main(main_), x(x_), y(y_), z(z_) {}
       titles(const char *title) { set(title); }
       titles(TH1 *hist) : main(hist->GetTitle()), x(hist->GetXaxis()->GetTitle()), y(hist->GetYaxis()->GetTitle()), z(hist->GetZaxis()->GetTitle()) {}
-
-      bool null();
-      void set_hist(TH1 *hist);
-      TString data();
-      TString print(bool show=true);
-      void operator=(const titles & tt);
+      bool null() const; ///< return if titles are emtpy
+      void set_hist(TH1 *hist); ///< set titles from histogram
+      TString data() const; /// return main;x;y;z
+      TString print(bool show=true) const; ///< print
+      void operator=(const titles & tt); ///< copy title
   };
 
   class cvshist {
     public:
-      TCanvas *cvs = nullptr;
-      TH1 *hist = nullptr;
+      TCanvas *cvs = nullptr; ///< canvas
+      TH1 *hist = nullptr; ///< histogram
       cvshist(TCanvas *cvs_, TH1 *hist_) : cvs(cvs_), hist(hist_) {}
+  };
+
+  class namei {
+    public:
+      TString name;
+      int i;
+      namei(int i_) : i(i_) {}
+      namei(TString name_, int i_=-999) : name(name_), i(i_) {}
+      int  operator()() const { return (name.IsNull() ? ((i==-999)?-1:2) : ((i==-999)?1:0)); } ///< -1:none, 0:all, 1:name, 2:i
+      bool oxname() const { if (name.IsNull()) return false; return true; }
+      bool oxi() const { if (i==-999) return false; return true; }
   };
 
 
@@ -158,13 +171,18 @@ namespace ejungwoo
   double fRMargin = 0.055;
   double fRMargin1 = 0.055;
   double fRMarginWithz = 0.155;
-  double fTopMainTitleSize = 0.08; // top title
-  double fAxisTitleSizes[]  = {0.05 ,  0.065, 0.075, 0.09, 0.11};
-  double fAxisLabelSizes[]  = {0.045,  0.05 , 0.055, 0.07, 0.09};
-  double fZAxisLabelSizes[] = {0.030,  0.035, 0.045, 0.05, 0.06};
-  double fXTitleOffsets[]   = {1.30 ,  1.15 , 1.00 , 0.80, 0.80};
-  double fYTitleOffsets[]   = {1.90 ,  1.45 , 1.27 , 1.10, 1.00};
-  TCut fCurrentCut;
+  double fTopMainTitleSize = 0.06; // top title
+  double fAxisTitleSizes[]  = {0.05, 0.05, 0.05,};
+  double fAxisLabelSizes[]  = {0.04, 0.04, 0.04,};
+  double fZAxisLabelSizes[] = {0.03, 0.03, 0.03,};
+  double fXTitleOffsets[]   = {1.30, 1.30, 1.30,};
+  double fYTitleOffsets[]   = {1.70, 1.70, 1.70,};
+  //double fTopMainTitleSize = 0.08; // top title
+  //double fAxisTitleSizes[]  = {0.05 ,  0.065, 0.075, 0.09, 0.11};
+  //double fAxisLabelSizes[]  = {0.045,  0.05 , 0.055, 0.07, 0.09};
+  //double fZAxisLabelSizes[] = {0.030,  0.035, 0.045, 0.05, 0.06};
+  //double fXTitleOffsets[]   = {1.30 ,  1.15 , 1.00 , 0.80, 0.80};
+  //double fYTitleOffsets[]   = {1.90 ,  1.45 , 1.27 , 1.10, 1.00};
   TCut fCurrentWeight; // TODO
   TString fHeader;
   TString fFooter;
@@ -178,27 +196,24 @@ namespace ejungwoo
   Color_t color_cenum = 3001;
 
   TObjArray *fCanvasArray = nullptr;
-  TObjArray *fEJCanvasArray = nullptr;
+  TObjArray *fECanvasArray = nullptr;
   TObjArray *fWrittenFileArray = nullptr;
   std::ifstream fDummyIfstream;
   TFile *fFileDummyGraphics = nullptr;
   TClonesArray *fParameters = nullptr;
 
-
   int fNumColors = 7;
-  Color_t fColorList[] = { kGray+2, kRed, kSpring-6, kAzure+7, kViolet-5, kYellow, kGreen+1, kPink+7, kGray+1 };
+  //Color_t fColorList[] = { kGray+2, kRed, kSpring-6, kAzure+7, kViolet-5, kYellow, kGreen+1, kPink+7, kGray+1 };
+  Color_t fColorList[] = { kBlack, kRed, kSpring-6, kAzure+7, kViolet-5, kYellow, kGreen+1, kPink+7, kGray+1 };
 
   int fNumMarkers = 5;
   Marker_t fMarkerList[] = { 24,25,26,30,28 };
 
-
   /********************************************************/
-
 
   // global
   void gverbose(int level=1);
   void gverbose(TString level/*="wirds"*/);
-  void gsetcut(TCut cut);
   void gender(TString header, TString footer); ///< Set header and footer for file, canvas, savings, and writings
   void gheader(TString header); ///< Set header for file, canvas, savings, and writings
   void gfooter(TString footer); ///< Set footer for file, canvas, savings, and writings
@@ -244,6 +259,7 @@ namespace ejungwoo
   void glegendleft(bool val=true); ///< draw legend on the left side of the canvas
   void glegendbyside(bool val); ///< draw legend by the side of stats
   void grootcode(bool val=true); ///< print to original root code which will work without this namespace
+  void grootcode(TString val="true"); ///< print to original root code which will work without this namespace
   void gcolors();
 
 
@@ -263,7 +279,7 @@ namespace ejungwoo
   TString firstname(TString str, TString delim="."); ///< get first name
   TString lastname(TString str, TString delim="/"); ///< get last name
   TString justname(TString str); ///< get name with no path and format. just name
-  TString toname(TString str);
+  TString toname(TString str); ///< replace special charactors
   TString makename(const char *name); ///< Make name = header + name + footer
   TString makename(TString name); ///< Make name = header + name + footer
   TString name_fig(); // get name figures directory
@@ -273,9 +289,9 @@ namespace ejungwoo
 
 
   //particle
-  TDatabasePDG *get_db_pdg();
-  TParticlePDG *get_particle(TString name);
-  TParticlePDG *get_particle(int pdg);
+  TDatabasePDG *get_db_pdg(); ///< add ions to db and return db
+  TParticlePDG *get_particle(TString name); ///< get particle by name
+  TParticlePDG *get_particle(int pdg); ///< get particle by pdg
 
 
   // file
@@ -287,13 +303,13 @@ namespace ejungwoo
   void colorwheel(); ///< show colorwheel
   void markers(); ///< show markers
   void colorlist(); ///< draw color list used in function colori()
-  Color_t colori(int icolor); ///< get selected list of root colors. Run function colorlist() to see color list. Or see fColorList.
-  Marker_t markeri(int imarker);
+  Color_t colori(int icolor); ///< get color from selected list of root colors. Run function colorlist() to draw color list.
+  Marker_t markeri(int imarker); /// get marker from selected list of root markers. Run function markers() to draw marker list.
 
 
   // Option_t 
-  bool check_option(TString from_this, const char *find_this);
-  bool check_option(Option_t *from_this, const char *find_this) { return check_option(TString(from_this),find_this); }
+  bool find_opt(TString from_this, const char *find_this); ///< check if string(from_this) contains specific option(find_this)
+  bool find_opt(Option_t *from_this, const char *find_this) { return find_opt(TString(from_this),find_this); }///< check if option(from_this) contains specific option(find_this)
 
 
   // TObject 
@@ -303,34 +319,35 @@ namespace ejungwoo
 
 
   // TCanvas 
-  TCanvas* make_c(TCanvas *cvs, TString vmtext=""); // jumpto_makec
-  TCanvas* make_c(TVirtualPad *cvs=(TVirtualPad*)nullptr, TString vmtext="") { if (cvs==nullptr) cvs = gPad; return make_c((TCanvas *)cvs,vmtext); }
-  TCanvas* new_c(TString name="", TString title="", double w=0, double h=0, bool withz=0, TString options=""/*"xyz"*/); // jumpto_new_c
-  TCanvas* new_c(TString name="", double w=0, double h=0, bool withz=0, TString options=""/*"xyz"*/) { return new_c(name,name,w,h,withz,options); }
-  TCanvas* cv(TString name="", double w=600, double h=500, TString options="") { return new_c(name, w, h, false, options); }
-  TCanvas* cc(TString name="", double w=600, double h=500, TString options="") { return new_c(name, w, h, true,  options); }
-  TCanvas* cv1(TString name="") { return new_c(name, 500, 550, false); }
-  TCanvas* cv2(TString name="") { return new_c(name, 600, 550, false); }
-  TCanvas* cv3(TString name="") { return new_c(name, 680, 550, false); }
-  TCanvas* cc1(TString name="") { return new_c(name, 600, 550, true ); }
-  TCanvas* cc2(TString name="") { return new_c(name, 680, 550, true ); }
-  TCanvas* cc3(TString name="") { return new_c(name, 900, 550, true ); }
-  TCanvas* cc4(TString name="") { return new_c(name,1200, 800, true ); }
-  TCanvas* cdraw13(TString name="", TH1 *h1=nullptr,  TH1 *h2=nullptr, TH1 *h3=nullptr, double size_ratio=1., Option_t *drawopt="hist"); //    jumpto_cdraw13
-  TCanvas* cdraw13(TCanvas *cvs, int idx, TH1 *hist, Option_t *drawopt="hist"); //    jumpto_cdraw13_
-  TCanvas* cdraw12(TString name="", TH1 *h1=nullptr,  TH1 *h2=nullptr, double size_ratio=1., Option_t *drawopt="hist"); //    jumpto_cdraw12
-  TCanvas* cdraw12(TCanvas *cvs, int idx, TH1 *hist, Option_t *drawopt="hist");  // jumpto_cdraw12_
+  TCanvas* make_c(TCanvas *cvs, TString vmtext=""); ///< make canvas stylish jumpto_makec
+  TCanvas* make_c(TVirtualPad *cvs=(TVirtualPad*)nullptr, TString vmtext="") { if (cvs==nullptr) cvs = gPad; return make_c((TCanvas *)cvs,vmtext); } ///< make vpad stylish jumpto_makec
+  TCanvas* new_c(TString name="", TString title="", double w=0, double h=0, bool withz=0, TString option=""/*"xyz"*/); ///< create new canvas
+  TCanvas* new_c(TString name="", double w=0, double h=0, bool withz=0, TString option=""/*"xyz"*/) { return new_c(name,name,w,h,withz,option); } ///< create new canvas
+  TCanvas* cv(TString name="", double w=600, double h=500, TString option="") { return new_c(name, w, h, false, option); } ///< create canvas for 1d histogram
+  TCanvas* cc(TString name="", double w=600, double h=500, TString option="") { return new_c(name, w, h, true,  option); } ///< create canvas for 2d histogram
+  TCanvas* cv1(TString name="") { return new_c(name, 500, 550, false); } ///< create canvas for 1d histogram with size :  500 x 500
+  TCanvas* cv2(TString name="") { return new_c(name, 600, 550, false); } ///< create canvas for 1d histogram with size :  600 x 500
+  TCanvas* cv3(TString name="") { return new_c(name, 680, 550, false); } ///< create canvas for 1d histogram with size :  680 x 500
+  TCanvas* cc1(TString name="") { return new_c(name, 600, 550, true ); } ///< create canvas for 2d histogram with size :  600 x 500
+  TCanvas* cc2(TString name="") { return new_c(name, 680, 550, true ); } ///< create canvas for 2d histogram with size :  680 x 500
+  TCanvas* cc3(TString name="") { return new_c(name, 900, 550, true ); } ///< create canvas for 2d histogram with size :  900 x 500
+  TCanvas* cc4(TString name="") { return new_c(name,1200, 800, true ); } ///< create canvas for 2d histogram with size : 1200 x 800
+  TCanvas* cdraw13(TString name="", TH1 *h1=nullptr,  TH1 *h2=nullptr, TH1 *h3=nullptr, double size_ratio=1., Option_t *drawopt="hist");  ///<create 3 histogram in one canvas with 1x3 dimension jumpto_cdraw13
+  TCanvas* cdraw13(TCanvas *cvs, int idx, TH1 *hist, Option_t *drawopt="hist"); ///<create 3 histogram in one canvas with 1x3 dimension jumpto_cdraw13_
+  TCanvas* cdraw12(TString name="", TH1 *h1=nullptr,  TH1 *h2=nullptr, double size_ratio=1., Option_t *drawopt="hist"); ///<create 3 histogram in one canvas with 1x2 dimension jumpto_cdraw12
+  TCanvas* cdraw12(TCanvas *cvs, int idx, TH1 *hist, Option_t *drawopt="hist");   ///<create 3 histogram in one canvas with 1x2 dimension jumpto_cdraw12
   TCanvas* div(TCanvas *c,int nx,int ny,Float_t xm=0.001,Float_t ym=0.001,int color=0); ///< Divide canvas
-  TCanvas* div0(TCanvas *c,int nx,int ny); ///< Divide canvas with no margins no gaps
+  TCanvas* div0(TCanvas *c,int nx,int ny); ///< Divide canvas with no margins, no gaps
   void save(TVirtualPad *cvs, TString format="pdf", bool version_control = true); ///< save TVirtualPad. See as save(TCanvas *) for detail
   void save(TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures__[version]/[canvas name].[version-automatically updated].[format]
   void save(TString name, TCanvas *cvs, TString format="pdf", bool version_control = true); ///< save cavans ./figures__[version]/[name].[version-automatically updated].[format]
-  void savecvsall(Option_t *opt="");
+  void saveallcvs(Option_t *opt="");
 
 
   //TH1
   TH1 *make_h(int s, TH1 *h, double xc=1., double yc=1.); ///< make histogram stylish! (s)bigger!, jumpto_maken
   TH1 *make_h(TH1 *h) { return make_h(2,h); } ///< make histogram stylish!, jumpto_makeh
+  TH1 *new_h(ejungwoo::variable var);
   TH1 *new_h(const char *name, const char *title, int nx, double x1, double x2, int ny=-1, double y1=-1, double y2=-1); ///< jumpto_new_hoooo
   TH1 *new_h(const char *name, TH1 *hist); ///< jumpto_new_h1 -> jumpto_new_h7
   TH1 *new_h(const char *name, titles titles1, binning binning1, binning binning2=binning()); ///< jumpto_new_h2
@@ -348,12 +365,12 @@ namespace ejungwoo
   TH1 *norm_integral(TH1 *h, double normto = 1); ///< normalize integral value of histogram to normto(=1 by default)
   TH1D *cutx(TH1 *hist, int bin1, int bin2); ///< cut TH2 histogram in x from x-bin = bin1~bin2 and project histogram to y
   TH1D *cutx(TH1 *hist, int bin1, int bin2, TGraph *cut_area); ///< same as above but TGraph *cut_area is set to area of cut region in h2;
-  TH1D *fold0(TH1D *h);
-  TH2D *fold0(TH2D *h);
-  TH1D *pdg_hist(const char *name="particleID", const char *title=";particles;");
-  void nobox(TCanvas *cvs, TH1 *hist, Color_t color=0);
-  void pdg_axis(TAxis *axis);
-  int  pdg_idx(int pdg);
+  TH1D *fold0(TH1D *h); ///< create histogram that fold original histogram respect to axis-middle and sum up contents
+  TH2D *fold0(TH2D *h); ///< create histogram that fold original histogram respect to axis-middle and sum up contents
+  TH1D *pdg_hist(const char *name="particleID", const char *title=";particles;"); /// create histogram with list of pdgs
+  void nobox(TCanvas *cvs, TH1 *hist, Color_t color=0); ///< make canvas with no box lines
+  void pdg_axis(TAxis *axis); ///< make pdg axis
+  int  pdg_idx(int pdg); ///< find corresponding index for pdg
   double max(TH1 *h); ///< get maximum value of histogram
   double max(TH1 *h, int &bin, double &x); ///< get maximum value of histogram
   TObjArray *fitgsx_list(TH1 *hist, int ndivisions=20, double c=1.5, int entry_cut=1000);
@@ -364,73 +381,73 @@ namespace ejungwoo
   double fwhm(TH1 *h, double &x0, double &x1, double &q); ///< FWHM(Full Width Half Maximum) of histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
   double fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
   TH1 *free (TH1 *h); ///< make axis labels feel free!
-  TH1D *subtract(TH1D *hist,TF1 *f1);
-  binning get_binning(TH1 *hist);
-  binning get_binningx(TH2 *hist);
-  binning get_binningy(TH2 *hist);
-  void get_binning(TH2 *hist, binning &binningx, binning &binningy);
-  TH1 *scale_xy(TH1 *h, Double_t x1, Double_t x2, Double_t y1=0, Double_t y2=0);
+  TH1D *subtract(TH1D *hist,TF1 *f1); ///< subtract function from histogram
+  binning get_binning(TH1 *hist); ///< get binning of histogram
+  binning get_binningx(TH2 *hist); ///< get binning of histogram-x
+  binning get_binningy(TH2 *hist); ///< get binning of histogram-y
+  void get_binning(TH2 *hist, binning &binningx, binning &binningy); ///< get binning of histogram both x and y to binningx and binningy
+  TH1 *scale_xy(TH1 *h, Double_t x1, Double_t x2, Double_t y1=0, Double_t y2=0); ///<
 
 
   // TGraph 
   TGraph *new_g(TString name="", TString title=""); ///< jumpto_newg
   TGraph *make_g(TGraph *gr, int mi=20, float ms=.8, int mc=1); ///< make graph stylish!, jumpto_makeg
-  double x1_g(TGraph* graph);
-  double x2_g(TGraph* graph);
-  double y1_g(TGraph* graph);
-  double y2_g(TGraph* graph);
+  double x1_g(TGraph* graph); ///< get graph minimum x
+  double x2_g(TGraph* graph); ///< get graph maximum x
+  double y1_g(TGraph* graph); ///< get graph minimum y
+  double y2_g(TGraph* graph); ///< get graph maximum y
   TGraphErrors *new_ge(TString name="", TString title=""); ///< jumpto_new_ge
   TGraphErrors *make_ge(TGraphErrors *gr, int mi=20, float ms=.5, int mc=1); ///< make error graph stylish!, jumpto_makege
   TGraph *sumf(std::vector<TF1*> &fs, int npx=1000); ///< create graph with "npx" points which is sum of TF1s in fs;
-  void add0(TGraph *graph);
-  TCutG *make_cutg(const char *name, TGraph *graph1, TGraph *graph2, bool cutx = true);
-  TCutG *make_cutg(TGraph *graph1, TGraph *graph2, bool cutx = true) { return make_cutg("",graph1,graph2,cutx); }
+  void add0(TGraph *graph); ///< add first point to end
+  TCutG *make_cutg(const char *name, TGraph *graph1, TGraph *graph2, bool cutx = true); ///< make TCUTG using two graphs running along x
+  TCutG *make_cutg(TGraph *graph1, TGraph *graph2, bool cutx = true) { return make_cutg("",graph1,graph2,cutx); } ///< make TCUTG using two graphs running along x
 
 
   // TF1
   TF1 *make_f(TF1 *f); ///< make function stylish!, jumpto_makef
   TF1 *settitle(TF1 *f, TString title); ///< set title of function histogram
-  TF1 *fitg(TGraph *g, TH1 *h, double c=2.5, Option_t *opt="RQ0");
-  TF1 *fitg(TF1 *f1, TH1 *h, double c=2.5, Option_t *opt="RQ0");
+  //TF1 *fitg(TGraph *g, TH1 *h, double c=2.5, Option_t *opt="RQ0");
+  TF1 *fitg(TF1 *f1, TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma. f will be use for fit function (gaussian)
   TF1 *fitg(TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitgg(TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< double gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *fitng(int n, TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< n gaussian fit of histogram in range of -c*sigma ~ +c*sigma
   TF1 *gg(TF1 *f, int i); ///< get i'th gaussian from multipule gaussian function f1
-  TObjArray *infog(TF1 *f, int cmax=5, vector<int> guideCS={0,1});
+  TObjArray *infog(TF1 *f, int cmax=5, vector<int> guideCS={0,1}); ///< create drawings with guide lines at x = [guideCS[]] * sigma.
   void drawgg(TF1 *f, Option_t *opt="samel"); ///< Draw n-gaussian separately
   double fwrm(TF1 *f, double ratio, double ndx, double &x0, double &x1, double &q); ///< calculate and return full width [ratio] maximum of function
   double fwhm(TF1 *f, double &x0, double &x1, double &q); ///< FWHM(Full Width Half Maximum) of function. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
   double fwhm(TF1 *f); ///< FWHM(Full Width Half Maximum) with function. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
-  TString expf1(TF1 *f1, TString expx="x", int digits = 2);
-  TF1 *clonef1(TF1 *f1, TString name="", int icopy=0);
-  TF1 *fconv(TString name, TF1 *f1, TF1 *f2, double range1=0, double range2=0);
-  TF1 *fconv(TF1 *f1, TF1 *f2, double range1=0, double range2=0) { return fconv("",f1,f2,range1,range2); }
+  TString expf1(TF1 *f1, TString expx="x", int digits = 2); ///< get expression of f1
+  TF1 *clonef1(TF1 *f1, TString name="", int icopy=0); ///< clone function with +0s. used to prevent warning messages
+  TF1 *fconv(TString name, TF1 *f1, TF1 *f2, double range1=0, double range2=0); ///< create convolution funciton of f1 and f2
+  TF1 *fconv(TF1 *f1, TF1 *f2, double range1=0, double range2=0) { return fconv("",f1,f2,range1,range2); } ///< create convolution funciton of f1 and f2
 
 
   // TText
-  TText *make_t(TText *tt, Short_t a=22);
-  void toss(TText *att, Color_t color=kBlack, TString align="cc", Size_t size=0.05, Font_t font=132);
+  TText *make_t(TText *tt, Short_t a=22); ///< make text stylish
+  void toss(TText *att, Color_t color=kBlack, TString align="cc", Size_t size=0.05, Font_t font=132); ///< make text with color, align, size and font
 
 
   // TLine
-  TLine *new_guidel(double x1, double y1, double x2, double y2);
+  TLine *new_guidel(double x1, double y1, double x2, double y2); ///< create guide line
 
 
   // statsbox
-  TPaveStats *find_statsbox(TCanvas *cvs);
-  TPaveStats *make_s(TCanvas *cvs, TPaveStats *statsbox);
-  TPaveStats *make_s(TPaveStats *statsbox);
+  TPaveStats *find_statsbox(TCanvas *cvs); ///< find and return stats box from canvas
+  TPaveStats *make_s(TCanvas *cvs, TPaveStats *statsbox); ///< make stats box stylish in the canvas
+  TPaveStats *make_s(TPaveStats *statsbox); ///< make stats box stylish
   TPaveText *make_p(TPaveText *pave); ///< make pave text stylish!, jumpto_makep
 
 
   // TLegend
-  TLegend *make_l(TCanvas *cvs, TLegend *legend, double x_offset=0, double y_offset=0, double width_fixed=0, double height_fixed=0); // jumpto_makel
-  TLegend *make_l(TLegend *legend, double x_offset=0, double y_offset=0, double width_fixed=0, double height_fixed=0);
+  TLegend *make_l(TCanvas *cvs, TLegend *legend, double x_offset=0, double y_offset=0, double width_fixed=0, double height_fixed=0); ///< make legend stylish    jumpto_makel
+  TLegend *make_l(TLegend *legend, double x_offset=0, double y_offset=0, double width_fixed=0, double height_fixed=0); ///< make legend stylish
 
 
   // TCutG
-  TCutG *cutg(TString f, TString cutname, TString x="x", TString y="y"); ///< set TCutG from file name
-  TCutG *cutg(TFile  *f, TString cutname, TString x="x", TString y="y"); ///< set TCutG from file
+  TCutG *cutg(TString f, TString cut_name, TString x="x", TString y="y"); ///< set TCutG from file name
+  TCutG *cutg(TFile  *f, TString cut_name, TString x="x", TString y="y"); ///< set TCutG from file
   TH1 *cutg(TH1 *h, TCutG *cut); ///< recreate histogram satisfying graphical cut
   TH1 *cutg_or(TH1 *h, TCutG *cut, TCutG *orcut); ///< recreate histogram satisfying cut or orcut
   TH1 *cutg_and(TH1 *h, TCutG *cut, TCutG *andcut); ///< recreate histogram satisfying cut and orcut
@@ -440,42 +457,37 @@ namespace ejungwoo
   std::ifstream& ofile(TString name); ///< open file as ifstream
   TString readline(std::ifstream& infile); ///< read line and return as TString of stream infile
   TString readline(); ///< read line and return as TString of stream open by ofile
-  void cfile(); /// close stream open by ofile
+  void cfile(); ///< close stream open by ofile
 
 
   // ecanvas
   void add(TObject *obj, TString option_draw="", TString title=""); ///< add objects to 1'st ecanvas with option jumpto_add
-  void addnew(TObject *obj, TString option_draw="", TString title=""); ///< add objects to new ecanvas with option
-  void addto(int ith, TObject *obj, TString option_draw="", TString title=""); ///< add objects to ith ecanvas with option
-  void addto(TString name, TObject *obj, TString option_draw="", TString title=""); ///< add objects to ecanvas with name option
-  void addto(ecanvas *ejcv, TObject *obj, TString option_draw="", TString title=""); ///< add objects to ejcv option
-  ejungwoo::ecanvas *findc(TString name);
+  void addto(ejungwoo::namei ni, int iddcvs, TObject *obj, TString option_draw="", TString title=""); ///< add objects to ith ecanvas with option
+  void addto(ejungwoo::namei ni, TObject *obj, TString option_draw="", TString title="") { addto(ni, 0, obj, option_draw, title); } ///< add objects to ith ecanvas with option
+  ejungwoo::ecanvas *findc(TString name); ///< find ecanvas
   void clearall(); ///< clear all ecanvas
-  void clearc(int i=0); ///< clear ecanvas of index i
-  void clearc(TString name); ///< clear ecanvas of name name
-  TVirtualPad *drawc(int i=0,TString opt="cvsl"); ///< draw objects in ecanvas of index i collected by add()/addto(). jump_to_drawc1
-  TVirtualPad *drawc(TString name,TString opt="cvsl"); ///< draw objects in ecanvas of name name collected by add()/addto(). jump_to_drawc2
-  void drawall(TString opt="cvsl");
-  void saveall(TString opt="pdf");
-  void printc(int i);
-  void printc(TString name);
+  void clearc(ejungwoo::namei ni); ///< clear ecanvas of index i or name
+  TVirtualPad *drawc(ejungwoo::namei ni, TString opt="cvsl"); ///< draw objects in ecanvas of index i or name collected by add()/addto(). jump_to_drawc1
+  void drawall(TString opt="cvsl"); ///< draw all ecanvases
+  void printc(ejungwoo::namei ni); ///< print ith(name) ecanvas
+  void saveallecvs(TString opt="pdf"); ///< save all ecanvases
 
 
   // TTree
-  void setpar(const char *, int);
-  void setpar(const char *, double);
-  void setpar(const char *, Long64_t);
-  void setpar(const char *, const char *);
-  TString getpar(const char *name);
-  void print_parameters();
-  TString replace_parameters(TString &name);
-  //TString replace_parameters(const char *name) { return replace_parameters(TString(name)); }
+  void setpar(const char *, int); ///< set user parameter
+  void setpar(const char *, double); ///< set user parameter
+  void setpar(const char *, Long64_t); ///< set user parameter
+  void setpar(const char *, const char *); ///< set user parameter
+  TString getpar(const char *name); ///< get user parameter
+  void print_parameters(); ///< print all user parameters
+  TString replace_parameters(TString &name); ///< replace all user parameters from name
+  TCut replace_parameters(TCut &cut); ///< replace all user parameters from cut
   TChain *chain(TChain *c, TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0); ///< create chain useing IDX, VERSIONIN/VERSIONOUT keyword
-  TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0) { return chain((new TChain(treename)),treename,filename,from,to,rmlist,numrm); }
-  TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); }
+  TChain *chain(TString treename, TString filename, int from=0, int to=0, int *rmlist={}, int numrm=0) { return chain((new TChain(treename)),treename,filename,from,to,rmlist,numrm); } ///< create chain useing IDX, VERSIONIN/VERSIONOUT keyword from treename
+  TChain *chain(TString filename, int from=0, int to=0, TString treename="data") { return chain(treename,filename,from,to); } ///< create chain useing IDX, VERSIONIN/VERSIONOUT keyword from treename
   TH1 *tppdg(TString name,TTree *tree,TString formula="pdg",TCut cut=""); ///< draw pdg distribution from PDG incoding
-  ejungwoo::cvshist drawv(ejungwoo::variable var, TTree *tree);
-  TH1 *tp(ejungwoo::variable var, TTree *tree);
+  ejungwoo::cvshist drawv(ejungwoo::variable var, TTree *tree); ///< draw histogram using variable from the tree and draw. return cvshist.
+  TH1 *tp(ejungwoo::variable var, TTree *tree); ///< histogram projection using variable jumpto_tpv
   TH1 *tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with tree, jumpto_tp0
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,const double *xbins); ///< simple tree projection starting with name using xbins for x-axis, jumpto_tp1
   TH1 *tp(TString name,TTree *tree,TString formula,TCut cut,TString title,int nx,double x1,double x2,int ny=-1,double y1=-1,double y2=-1); ///< simple tree projection starting with name, jumpto_tp2
@@ -488,19 +500,19 @@ namespace ejungwoo
   // buffer
   int max(int *buffer, int n); ///< get maximum value of buffer
   double max(double *buffer, int n); ///< get maximum value of buffer
-  bool vinarray(int value, vector<int> array);
-  bool vinarray(int value, int *array, int n);
+  bool vinarray(int value, vector<int> array); ///< check if vector contains the value
+  bool vinarray(int value, int *array, int n); ///< check if array of length n contains the value
 
 
   // name
   TObjArray *tok(TString line, TString token); ///< tokenize scv format to array of TObjString. Use tok to get TString of each TObjString
-  TString tok(TString line, TString token, int i);
+  TString tok(TString line, TString token, int i); ///< get i'th tokenized TString
   TString tok(TObjArray *line, int i); ///< Get TString from TObjString "line" of index i
 };
 
 class ejungwoo::drawing : public TNamed {
   public:
-    enum istype : int
+    enum drawing_type : int
     {
       kOther       = 0,
       kHistogram1  = 1,
@@ -517,7 +529,8 @@ class ejungwoo::drawing : public TNamed {
     TObject *fObject;
     TString fDrawOption;
     TString fLegendOption;
-    istype fObjectType = kOther;
+    drawing_type fObjectType = kOther;
+    int fDivInCanvas = -1;
     int fIdxInCanvas = -1;
     bool fSetColor = true;
     bool fOmitDraw = false;
@@ -526,8 +539,7 @@ class ejungwoo::drawing : public TNamed {
     bool fFixColor = 0;
 
   public:
-    drawing(TObject *obj, TString draw_option="", TString title=""): fObject(obj), fDrawOption(draw_option)
-    {
+    drawing(TObject *obj, TString draw_option="", TString title=""): fObject(obj), fDrawOption(draw_option) {
       SetName(obj->GetName());
 
       if (fDrawOption.Index("fixc")>=0) { fDrawOption.ReplaceAll("fixc",""); fFixColor = true; }
@@ -537,7 +549,6 @@ class ejungwoo::drawing : public TNamed {
 
       bool addx = false;
       if (fDrawOption.Index("addx")>=0) { fDrawOption.ReplaceAll("addx",""); addx = true; }
-
       if (fDrawOption.Index("colorx")>=0) { fDrawOption.ReplaceAll("colorx",""); fSetColor = false; }
 
       if (fObject->InheritsFrom(TVirtualPad::Class())) {
@@ -661,19 +672,20 @@ class ejungwoo::drawing : public TNamed {
     void OmitDraw(bool val=true) { fOmitDraw = val; }
     virtual void Draw(Option_t *draw_option="") {
       if (!fOmitDraw) {
+        //cout << fObject->GetName() << " " << fDrawOption << endl;
         fObject -> Draw(fDrawOption);
       }
     }
 
     /****************************************************************/
-    TObject *GetObject()    { return fObject; }
-    TH1*     GetHistogram() { return (TH1*)     fObject; }
-    TF1*     GetFunction()  { return (TF1*)     fObject; }
-    TGraph*  GetGraph()     { return (TGraph*)  fObject; }
-    TH1D*    GetHist1()     { return (TH1D*)    fObject; }
-    TH2D*    GetHist2()     { return (TH2D*)    fObject; }
-    TLegend* GetLegend()    { return (TLegend*) fObject; }
-    TCanvas* GetCanvas()    { return (TCanvas*) fObject; }
+    TObject*     GetObject()    { return fObject; }
+    TH1*         GetHistogram() { return (TH1*)     fObject; }
+    TF1*         GetFunction()  { return (TF1*)     fObject; }
+    TGraph*      GetGraph()     { return (TGraph*)  fObject; }
+    TH1D*        GetHist1()     { return (TH1D*)    fObject; }
+    TH2D*        GetHist2()     { return (TH2D*)    fObject; }
+    TLegend*     GetLegend()    { return (TLegend*) fObject; }
+    TVirtualPad* GetPad()       { return (TVirtualPad*) fObject; }
 
     /****************************************************************/
     TString GetDrawOption() { return fDrawOption; }
@@ -681,21 +693,21 @@ class ejungwoo::drawing : public TNamed {
     bool Withz() { if (fDrawOption.Index("z")>=0) return true; return false; }
 
     /****************************************************************/
-    istype GetType()   { return fObjectType; }
-    bool IsHistogram() { if (fObjectType==kHistogram1||fObjectType==kHistogram2) return true; return false; }
-    bool IsFunction()  { if (fObjectType==kFunction1||fObjectType==kFunction2) return true; return false; }
-    bool IsGraph()     { if (fObjectType==kGraph||fObjectType==kGraphErrors) return true; return false; }
-    bool IsHist1()     { if (fObjectType==kHistogram1) return true; return false; }
-    bool IsHist2()     { if (fObjectType==kHistogram2) return true; return false; }
-    bool IsLegend()    { if (fObjectType==kLegend) return true; return false; }
-    bool IsCanvas()    { if (fObjectType==kCanvas) return true; return false; }
-    bool IsRanged()    { if (IsHistogram()||IsFunction()||IsGraph()) return true; return false; }
+    drawing_type GetType()   { return fObjectType; }
+    bool IsHistogram() const { if (fObjectType==kHistogram1||fObjectType==kHistogram2) return true; return false; }
+    bool IsFunction()  const { if (fObjectType==kFunction1||fObjectType==kFunction2) return true; return false; }
+    bool IsGraph()     const { if (fObjectType==kGraph||fObjectType==kGraphErrors) return true; return false; }
+    bool IsHist1()     const { if (fObjectType==kHistogram1) return true; return false; }
+    bool IsHist2()     const { if (fObjectType==kHistogram2) return true; return false; }
+    bool IsLegend()    const { if (fObjectType==kLegend) return true; return false; }
+    bool IsCanvas()    const { if (fObjectType==kCanvas) return true; return false; }
+    bool IsRanged()    const { if (IsHistogram()||IsFunction()||IsGraph()) return true; return false; }
 
 
     /****************************************************************/
-    virtual void Print(Option_t *option="")
+    virtual void Print(Option_t *option="") const
     {
-      //cout << "drawing["<<fObject->ClassName()<<"] " << fName << ", " << fTitle;
+      cout << "drawing["<<fObject->ClassName()<<"] " << fName << ", " << fTitle;
       //cout << fName << ", " << fTitle;
       if (IsRanged())
         cout << fIdxInCanvas << " x:(" << fX1Range << " -> " <<  fX2Range << ") y:(" <<  fY1Range << " -> " <<  fY2Range << ")";
@@ -705,13 +717,21 @@ class ejungwoo::drawing : public TNamed {
     /****************************************************************/
     void SetIdxInCanvas(int val) {
       fIdxInCanvas = val;
-      if (fIdxInCanvas==0 && fDrawOption.Index("same")>=0)
+      if (fIdxInCanvas==0 && fDrawOption.Index("same")>=0) {
         fDrawOption.ReplaceAll("same","");
+        fDrawOption.ReplaceAll("a","");
+      }
       else if (fIdxInCanvas!=0) {
         if (fDrawOption.Index("same")<0)
           fDrawOption = fDrawOption + " same";
-        if (IsGraph() && fDrawOption.Index("a")>=0)
-          fDrawOption.ReplaceAll("a","");
+        //if (IsGraph())
+        {
+          TString copyOption = fDrawOption;
+          copyOption.ReplaceAll("same","");
+          if (copyOption.Index("a")>=0)
+            copyOption.ReplaceAll("a","");
+          copyOption = copyOption + "same";
+        }
       }
 
       if (fSetColor) {
@@ -736,20 +756,22 @@ class ejungwoo::drawing : public TNamed {
       }
     }
 
+    void SetDivInCanvas(int div) { fDivInCanvas = div; }
+
     /****************************************************************/
-    double GetX1() { return fX1Range; }
-    double GetX2() { return fX2Range; }
-    double GetY1() { return fY1Range; }
-    double GetY2() { return fY2Range; }
+    double GetX1() const { return fX1Range; }
+    double GetX2() const { return fX2Range; }
+    double GetY1() const { return fY1Range; }
+    double GetY2() const { return fY2Range; }
     void SetRangeUser(double y1, double y2) {
       if (IsHistogram())
         ((TH1 *) fObject) -> GetYaxis() -> SetRangeUser(y1, y2);
     }
 
     /****************************************************************/
-    bool IsLogx() { return fLogx; }
-    bool IsLogy() { return fLogy; }
-    bool IsLogz() { return fLogz; }
+    bool IsLogx() const { return fLogx; }
+    bool IsLogy() const { return fLogy; }
+    bool IsLogz() const { return fLogz; }
 
     /****************************************************************/
     void AddToLegend(TLegend *legend) {
@@ -766,29 +788,36 @@ class ejungwoo::ecanvas : public TObjArray
 {
   public:
     TVirtualPad *fCanvas = nullptr;
-    TString fVMarkTextForEJCvs;
+    TString fVMarkTextForECvs;
     TString fTitle;
+    int fMaxIdd = 0;
 
     void SetTitle(const char *title) { fTitle = title; }
 
     ecanvas(TString name, TString vmark="") {
       SetName(name);
-      fVMarkTextForEJCvs = vmark;
+      fVMarkTextForECvs = vmark;
     }
 
     /****************************************************************/
-    void add(TObject *object, TString draw_option="", TString title="")
+    void add(TObject *object, int iddcvs, TString draw_option="", TString title="")
     {
       auto wrap = new drawing(object,draw_option,title);
 
-      if (!ejungwoo::fVMarkText.IsNull() && fVMarkTextForEJCvs.IsNull())
-        fVMarkTextForEJCvs = fVMarkText;
+      wrap -> SetDivInCanvas(iddcvs);
+      if (fMaxIdd < iddcvs)
+        fMaxIdd = iddcvs;
+
+      wrap -> Print();
+
+      if (!ejungwoo::fVMarkText.IsNull() && fVMarkTextForECvs.IsNull())
+        fVMarkTextForECvs = fVMarkText;
 
       TObjArray::Add(wrap);
     }
 
     /****************************************************************/
-    TVirtualPad *drawc(TString cvs_option="cvsl")
+    TVirtualPad *draw(TString cvs_option="cvsl")
     {
       if (!ejungwoo::fAllowDrawC)
         return (TCanvas *) nullptr;
@@ -820,7 +849,7 @@ class ejungwoo::ecanvas : public TObjArray
       {
         auto wrap = (drawing *) At(idraw);
         if (wrap->IsCanvas())
-          fCanvas = (TVirtualPad *) wrap->GetObject();
+          fCanvas = (TVirtualPad *) wrap -> GetPad();
         else if (wrap->IsHistogram()) {
           if (drawobj_frame == nullptr)
             drawobj_frame = wrap;
@@ -838,9 +867,9 @@ class ejungwoo::ecanvas : public TObjArray
           if (x2_user0 < wrap -> GetX2()) x2_user0 = wrap -> GetX2();
           if (y1_user0 > wrap -> GetY1()) y1_user0 = wrap -> GetY1();
           if (y2_user0 < wrap -> GetY2()) y2_user0 = wrap -> GetY2();
-          wrap -> AddToLegend(legend);
 
-          //if (fTitle.IsNull()) fTitle = wrap -> GetTitle();
+          if (!wrap -> IsHist2())
+            wrap -> AddToLegend(legend);
         }
 
         if (wrap -> IsLogx()) set_logx = true;
@@ -850,16 +879,12 @@ class ejungwoo::ecanvas : public TObjArray
 
       auto dy_user = y2_user0 - y1_user0;
       auto dx_user = x2_user0 - x1_user0;
-
       auto x1_user = x1_user0 - 0.1*dx_user;
       auto x2_user = x2_user0 + 0.1*dx_user;
       auto y1_user = y1_user0 - 0.1*dy_user;
       auto y2_user = y2_user0 + 0.1*dy_user;
-      if (x1_user0 >= 0 && x1_user < 0)
-        x1_user = 0;
-      if (y1_user0 >= 0 && y1_user < 0) {
-        y1_user = 0;
-      }
+      if (x1_user0 >= 0 && x1_user < 0) x1_user = 0;
+      if (y1_user0 >= 0 && y1_user < 0) y1_user = 0;
 
       int fCountDraw = 0;
       if (drawobj_frame==nullptr) {
@@ -881,8 +906,7 @@ class ejungwoo::ecanvas : public TObjArray
             fCanvas = cc(fName);
           else fCanvas = cv(fName);
         }
-        else
-          fCanvas = (TVirtualPad *) gPad;
+        else fCanvas = (TVirtualPad *) gPad;
       }
       fCanvas -> cd();
 
@@ -900,19 +924,19 @@ class ejungwoo::ecanvas : public TObjArray
       if (!exist_legend) {
         if (cvs_option.Index("lleft")>=0) {
           glegendleft(1);
-          make_l(legend) -> Draw("same");
+          if (legend->GetNRows()>0)
+            make_l(legend) -> Draw("same");
           glegendleft(0);
         }
         else if (cvs_option.Index("l")>=0) {
-          make_l(legend) -> Draw("same");
+          if (legend->GetNRows()>0)
+            make_l(legend) -> Draw("same");
         }
       }
 
       if (set_logx) fCanvas -> SetLogx();
       if (set_logy) fCanvas -> SetLogy();
       if (set_logz) fCanvas -> SetLogz();
-
-      //make_c(fCanvas, fVMarkTextForEJCvs);
 
       return fCanvas;
     }
@@ -922,7 +946,7 @@ class ejungwoo::ecanvas : public TObjArray
       ejungwoo::save(fCanvas,opt);
     }
 
-    void printc() {
+    void print() {
       int numDrawings = GetEntries();
       for (auto idraw=0; idraw<numDrawings; ++idraw) {
         auto wrap = (drawing *) At(idraw);
@@ -1002,15 +1026,16 @@ void ejungwoo::binning::operator=(const ejungwoo::binning binn) {
   w = binn.w;
 }
 
-double ejungwoo::binning::low_edge(int i=1) { return min+(i-1)*(max-min)/n; }
-double ejungwoo::binning::high_edge(int i=-1) { if (i==-1) i=n; return min+(i)*(max-min)/n; }
 void ejungwoo::binning::reset() { idx = 0; }
 void ejungwoo::binning::end() { idx = n; }
-double ejungwoo::binning::next() { if (idx>n) return false; value = min + (idx++) * w; return true; }
-double ejungwoo::binning::back() { if (idx<0) return false; value = min + (idx--) * w; return true; }
+double ejungwoo::binning::next()  { if (idx>n)   return false; value = min + (idx++) * w; return true; }
+double ejungwoo::binning::back()  { if (idx<0)   return false; value = min + (idx--) * w; return true; }
 double ejungwoo::binning::nextc() { if (idx>n-1) return false; value = min + (idx++) * w + .5 * w; return true; }
-int ejungwoo::binning::geti(double invalue) { return int((invalue-min)/w); }
-TString ejungwoo::binning::print(bool show=true) {
+double ejungwoo::binning::low_edge(int i=1)      const { return min+(i-1)*(max-min)/n; }
+double ejungwoo::binning::high_edge(int i=-1)    const { if (i==-1) i=n; return min+(i)*(max-min)/n; }
+int    ejungwoo::binning::geti(double invalue)   const { return int((invalue-min)/w); }
+double ejungwoo::binning::getc(int ibin)         const { return (min + (ibin-.5)*w); }
+TString ejungwoo::binning::print(bool show=true) const {
   TString line;
   line = TString("(")+n+", "+min+", "+max+"; "+w+")";
   if (show)
@@ -1029,8 +1054,9 @@ class ejungwoo::variable {
     binning binn;
     binning binn2;
     TString logs = "";
+    TObjArray histarray;
 
-    void setpar();
+    void setpar() { return ejungwoo::setpar(name,expression); }
 
     void init()
     {
@@ -1084,40 +1110,158 @@ class ejungwoo::variable {
     bool is1d() { if (expression.Index(":")>=0||binn2.n>0) return false; return true; }
     bool is2d() { if (expression.Index(":")>=0||binn2.n>0) return true; return false; }
 
-    TH1 *new_h();
+    void add(TH1 *hist) { histarray.Add(hist); }
+
+    TH1 *new_h(bool addtolist=true) {
+      auto hist = ejungwoo::new_h(*this);
+      if (addtolist)
+        add(hist);
+      return hist;
+    }
+
+    TH1 *draw(TTree *tree, bool addtolist=true) {
+      auto hist = ejungwoo::tp(*this, tree);
+      if (addtolist)
+        add(hist);
+      return hist;
+    }
+
+    TH1 *gethist(int i) { return (TH1 *) histarray.At(i); }
+    TH1 *gethist(TString name) { return (TH1 *) histarray.FindObject(name); }
 };
 
-TH1 *ejungwoo::variable::new_h()
-{
-  return ejungwoo::new_h(name,title,binn,binn2);
-}
+  /*
+class ejungwoo::oman {
+  public:
+    enum opttype : int {
+      kFixColor,
+      kLogx,
+      kLogy,
+      kLogz,
+      kIgnoreLegend,
+      kIgnoreColoring,
+      kIsFrame,
+    };
 
-void ejungwoo::variable::setpar()
-{
-  return ejungwoo::setpar(name,expression);
-}
+    TString fOptionString = "";
+    vector<opttype> fOptionList;
+
+    bool findrm(const char *find_this) {
+      if (fOptionString.Index(find_this)>=0) {
+        fOptionString.ReplaceAll(find_this,"");
+        return true;
+      }
+      return false;
+    }
+
+    void add_option(TString mode)
+    {
+      if (mode=="drawing")
+      {
+        if (findrm("fixc"))     fOptionList.push_back(kFixColor);
+        if (findrm("logx"))     fOptionList.push_back(kLogx);
+        if (findrm("logy"))     fOptionList.push_back(kLogy);
+        if (findrm("logz"))     fOptionList.push_back(kLogz);
+        if (findrm("addx"))     fOptionList.push_back(kIgnoreLegend);
+        if (findrm("colorx"))   fOptionList.push_back(kIgnoreColoring);
+        if (findrm("frame"))    fOptionList.push_back(kIsFrame);
+      }
+
+      fOptionString = "";
+    }
+
+    oman(Option_t *opt) : fOptionString(opt)            { add_option(); }
+    oman(TString   opt) : fOptionString(opt)            { add_option(); }
+    oman(int       opt) : fOptionString(Form("%d",opt)) { add_option(); }
+};
+*/
 
 void ejungwoo::print_parameters()
 {
   TIter next(fParameters);
+  int idxit = 0;
   while (TNamed *parameter = (TNamed *) next()) {
     TString parameter_name = parameter -> GetName();
     TString parameter_title = parameter -> GetTitle();
-    cout << std::left << setw(20) << parameter_name << std::right << parameter_title << endl;
+    cout << std::left << setw(4) << idxit << setw(20) << parameter_name << std::right << parameter_title << endl;
+    idxit++;
   }
 }
 
 TString ejungwoo::replace_parameters(TString &name)
 {
   TIter next(fParameters);
-  while (TNamed *parameter = (TNamed *) next()) {
-    TString parameter_name = parameter -> GetName();
-    TString parameter_title = parameter -> GetTitle();
-    name.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+  while (name.Index("$$")>=0)
+  {
+    TString nameb = name;
+    next.Reset();
+    while (TNamed *parameter = (TNamed *) next()) {
+      TString parameter_name = parameter -> GetName();
+      TString parameter_title = parameter -> GetTitle();
+      name.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+    }
+
+    if (nameb==name)
+      break;
   }
+
   return name;
 }
 
+
+TCut ejungwoo::replace_parameters(TCut &cut)
+{
+  TString cut_name = cut.GetName();
+  TString cut_title = cut.GetTitle();
+
+  TIter next(fParameters);
+
+  if (cut_name.Index("$$")==0)
+  {
+    while (TNamed *parameter = (TNamed *) next()) {
+      TString parameter_name = parameter -> GetName();
+      TString parameter_title = parameter -> GetTitle();
+      if (cut_name.Index(parameter_name)==3) {
+        cut_name = parameter_name;
+        cut_title = parameter_title;
+        break;
+      }
+    }
+  }
+
+  if (cut_name==cut.GetName())
+  {
+    TString cut_name_new;
+    if (cut_name=="CUT")
+      cut_name = "";
+
+    while (cut_title.Index("$$")>=0)
+    {
+      TString titleb = cut_title;
+      next.Reset();
+      while (TNamed *parameter = (TNamed *) next()) {
+        TString parameter_name = parameter -> GetName();
+        TString parameter_title = parameter -> GetTitle();
+        if (cut_title.Index(parameter_name)>=0) {
+          cut_title.ReplaceAll(TString("$$(")+parameter_name+")",parameter_title);
+          if (!cut_name_new.IsNull())
+            cut_name_new = parameter_name;
+          else
+            cut_name_new = cut_name_new+"_"+parameter_name;
+        }
+      }
+      if (cut_name.IsNull())
+        cut_name = cut_name_new;
+
+      if (titleb==cut_title)
+        break;
+    }
+  }
+
+  cut.SetNameTitle(cut_name,cut_title);
+
+  return cut;
+}
 
 
 /**
@@ -1140,6 +1284,16 @@ void ejungwoo::gverbose(TString level) {
   if (level.Index("s")>=0) fVerboseSave = true;
   if (level.Index("w")>=0) fVerboseWrte = true;
 }
+
+/**
+ * @param level choose from "irdsw"
+ *   - " "(0) : print nothing
+ *   - "i"(1) : print information
+ *   - "r"(2) : print rich information
+ *   - "d" : draw inner layer histograms and fits
+ *   - "s" : save inner layer histograms and fits to png file
+ *   - "w" : write inner layer histograms and fits to root file
+ */
 void ejungwoo::gverbose(int level) {
   if (level==0) {
     fVerboseInfo = false;
@@ -1154,7 +1308,6 @@ void ejungwoo::gverbose(int level) {
     fVerboseRich = true;
   }
 }
-void ejungwoo::gsetcut(TCut cut) { fCurrentCut = cut; }
 void ejungwoo::gender(TString header, TString footer) { ejungwoo::gheader(header); ejungwoo::gfooter(footer); }
 void ejungwoo::gheader(TString header) { fHeader = header; ejungwoo::setpar("header",header); }
 void ejungwoo::gfooter(TString footer) { fFooter = footer; ejungwoo::setpar("footer",footer); }
@@ -1278,8 +1431,8 @@ void ejungwoo::gpdgname(bool usename) { fUsePDGNames = usename; }
 void ejungwoo::gdraw(bool val) {
   fAllowDrawC=val;
   if (fVerboseInfo) {
-    if(fAllowDrawC) std::cout<<"Allow draw ejcvs; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<std::endl;
-    else std::cout<<"DO NOT Allow draw ejcvs;; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<std::endl;
+    if(fAllowDrawC) std::cout<<"Allow draw ecvs; TCanvas will be written by ejungwoo::save(TCanvas *) method."<<std::endl;
+    else std::cout<<"DO NOT Allow draw ecvs;; TCanvas will NOT!! be written by ejungwoo::save(TCanvas *) method."<<std::endl;
   }
 }
 void ejungwoo::gcutt(double r) { fTMargin = r; }
@@ -1293,6 +1446,7 @@ void ejungwoo::gstatleft(bool val) { fDrawStatLeft = val; }
 void ejungwoo::glegendleft(bool val) { fDrawLgndLeft = val; }
 void ejungwoo::glegendbyside(bool val) { fDrawLegendBySide = val; }
 void ejungwoo::grootcode(bool val) { fPrintToRootCode = (val?"true":""); }
+void ejungwoo::grootcode(TString val) { fPrintToRootCode = val; }
 
 void ejungwoo::gcolors()
 {
@@ -1672,6 +1826,7 @@ void ejungwoo::ginitstyle() {
   gStyle->SetTitleFont(fTextFont,"y");
   gStyle->SetTitleFont(fTextFont,"z");
   gStyle->SetTitleFontSize(fTopMainTitleSize);
+  gStyle->SetTitleColor(kGray+1,"");
 
   if (!fPrintToRootCode.IsNull()) {
     cout << "gStyle -> SetTitleFont(" << fTextFont << ",\"\");" << endl;
@@ -1682,14 +1837,14 @@ void ejungwoo::ginitstyle() {
   }
 }
 
-bool ejungwoo::check_option(TString from_this, const char *find_this)
+bool ejungwoo::find_opt(TString from_this, const char *find_this)
 {
   if (from_this.Index(find_this)>=0)
     return true;
   return false;
 }
 
-TCanvas *ejungwoo::new_c(TString name, TString title, double width, double height, bool withz, TString options) // jumpto_new_c
+TCanvas *ejungwoo::new_c(TString name, TString title, double width, double height, bool withz, TString option) // jumpto_new_c
 {
   ginitstyle();
 
@@ -1728,9 +1883,9 @@ TCanvas *ejungwoo::new_c(TString name, TString title, double width, double heigh
 
   make_c(cvs);
 
-  if (check_option(options,"x")) { cvs -> SetLogx(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogx();" << std::endl; }
-  if (check_option(options,"y")) { cvs -> SetLogy(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogy();" << std::endl; }
-  if (check_option(options,"z")) { cvs -> SetLogz(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogz();" << std::endl; }
+  if (find_opt(option,"x")) { cvs -> SetLogx(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogx();" << std::endl; }
+  if (find_opt(option,"y")) { cvs -> SetLogy(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogy();" << std::endl; }
+  if (find_opt(option,"z")) { cvs -> SetLogz(); if (!fPrintToRootCode.IsNull()) std::cout << fPrintToRootCode << " -> SetLogz();" << std::endl; }
 
   if(fCanvasArray==nullptr)
     fCanvasArray=new TObjArray();
@@ -2140,10 +2295,21 @@ TH1 *ejungwoo::copy_h(const char *name, TH1 *hist, double scale=1.) // jumpto_co
   return histc;
 }
 
-TH1 *ejungwoo::new_h(const char *name, const char *title, int nx, double x1, double x2, int ny, double y1, double y2) // jumpto_new_hoooo
+TH1 *ejungwoo::new_h(ejungwoo::variable var)
 {
-  if (TString(name).IsNull()) name = Form("hist_%d",fCountHist++);
-  if (TString(title).IsNull()) title = name;
+  return ejungwoo::new_h(var.name,var.title,var.binn,var.binn2);
+}
+
+TH1 *ejungwoo::new_h(const char *name_, const char *title_, int nx, double x1, double x2, int ny, double y1, double y2) // jumpto_new_hoooo
+{
+  TString name = name_;
+  TString title = title_;
+
+  if (name.IsNull()) name = Form("hist_%d",fCountHist++);
+  if (title.IsNull()) title = name;
+
+  name = replace_parameters(name);
+  title = replace_parameters(title);
 
   TH1 *h = nullptr;
   if (ny<0) h = new TH1D(name, title, nx, x1, x2);
@@ -3390,18 +3556,22 @@ TH1D *ejungwoo::cutx(TH1 *hist, int bin1, int bin2, TGraph *cut_area) {
 void ejungwoo::add(TObject *obj, TString option_draw, TString title) { // jumpto_add
   addto(0,obj, option_draw, title);
 }
-void ejungwoo::addnew(TObject *obj, TString option_draw, TString title) {
-  if(fEJCanvasArray==nullptr)
-    fEJCanvasArray=new TObjArray();
 
-  int idx=fEJCanvasArray->GetEntries();
-  auto name=makename(Form("ej_canvas_%d",idx));
-  auto ejcvs=new ecanvas(name);
-  fEJCanvasArray->AddAt(ejcvs,idx);
+void ejungwoo::addto(ejungwoo::namei ni, int iddcvs, TObject *obj, TString option_draw, TString title) {
+  if(fECanvasArray==nullptr)
+    fECanvasArray=new TObjArray();
 
-  addto(ejcvs, obj, option_draw, title);
-}
-void ejungwoo::addto(ecanvas *ejcvs, TObject *obj, TString option_draw, TString title) {
+  auto necvs = fECanvasArray -> GetEntries();
+  ejungwoo::ecanvas *ecvs = nullptr;
+       if (ni.oxi() && necvs<=ni.i) ecvs = (ecanvas *) fECanvasArray -> At(ni.i);
+  else if (ni.oxname())             ecvs = (ecanvas *) fECanvasArray -> FindObject(ni.name);
+  else return;
+
+  if (ecvs==nullptr) {
+    ecvs = new ecanvas(ni.name);
+    fECanvasArray -> Add(ecvs);
+  }
+
   if (option_draw.Index(";")>=0 && obj->InheritsFrom("TNamed")) {
     TObjArray *tokens=option_draw.Tokenize(";");
     if (tokens->GetEntries()==2) {
@@ -3416,126 +3586,95 @@ void ejungwoo::addto(ecanvas *ejcvs, TObject *obj, TString option_draw, TString 
       option_draw="";
     }
   }
-  ejcvs->add(obj, option_draw, title);
-  return;
+
+  ecvs -> add(obj, iddcvs, option_draw, title);
 }
-void ejungwoo::addto(int i, TObject *obj, TString option_draw, TString title) {
-  if(fEJCanvasArray==nullptr)
-    fEJCanvasArray=new TObjArray();
 
-  ecanvas *ejcvs = nullptr;
-  int numACanvases = fEJCanvasArray->GetEntries();
-  if (numACanvases<=i) {
-    auto name = makename(Form("ej_canvas_%d",i));
-    ejcvs=new ecanvas(name);
-    fEJCanvasArray->AddAt(ejcvs,i);
-  }
-  else
-    ejcvs = (ecanvas *) fEJCanvasArray->At(i);
-
-  addto(ejcvs, obj, option_draw, title);
-}
-void ejungwoo::addto(TString name, TObject *obj, TString option_draw, TString title) {
-  if(fEJCanvasArray==nullptr)
-    fEJCanvasArray=new TObjArray();
-
-  name = makename(name);
-
-  auto ejcvs=(ecanvas *)fEJCanvasArray->FindObject(name);
-  if (ejcvs==nullptr) {
-    ejcvs=new ecanvas(name);
-    fEJCanvasArray->Add(ejcvs);
-  }
-
-  addto(ejcvs, obj, option_draw, title);
-}
 ejungwoo::ecanvas *ejungwoo::findc(TString name)
 {
-  if(fEJCanvasArray==nullptr)
-    fEJCanvasArray=new TObjArray();
+  if(fECanvasArray==nullptr)
+    fECanvasArray=new TObjArray();
 
   name = makename(name);
 
-  auto ejcvs=(ecanvas *)fEJCanvasArray->FindObject(name);
-  if (ejcvs==nullptr) {
-    ejcvs=new ecanvas(name);
-    fEJCanvasArray->Add(ejcvs);
+  auto ecvs=(ecanvas *)fECanvasArray->FindObject(name);
+  if (ecvs==nullptr) {
+    ecvs=new ecanvas(name);
+    fECanvasArray->Add(ecvs);
   }
 
-  return ejcvs;
+  return ecvs;
 }
 
 void ejungwoo::clearall() {
-  if (fEJCanvasArray==nullptr)
+  if (fECanvasArray==nullptr)
     return;
-  fEJCanvasArray->Clear();
+  fECanvasArray->Clear();
 }
 
-void ejungwoo::clearc(int i) {
-  if (fEJCanvasArray==nullptr)
-    return;
-  auto ejcvs=(ecanvas *)fEJCanvasArray->At(i);
-  if (ejcvs==nullptr)
-    return;
-  ejcvs->Clear();
+void ejungwoo::clearc(ejungwoo::namei ni) {
+  if (fECanvasArray==nullptr) return; 
+
+  auto necvs = fECanvasArray -> GetEntries();
+  ejungwoo::ecanvas *ecvs = nullptr;
+       if (ni.oxi() && necvs<=ni.i) ecvs = (ecanvas *) fECanvasArray -> At(ni.i);
+  else if (ni.oxname())             ecvs = (ecanvas *) fECanvasArray -> FindObject(ni.name);
+  else return;
+
+  if (ecvs!=nullptr)
+    ecvs -> Clear();
 }
 
-void ejungwoo::clearc(TString name) {
-  if (fEJCanvasArray==nullptr)
-    return;
-  auto ejcvs=(ecanvas *)fEJCanvasArray->FindObject(name);
-  if (ejcvs==nullptr)
-    return;
-  ejcvs->Clear();
-}
+TVirtualPad *ejungwoo::drawc(ejungwoo::namei ni,TString opt) { //jump_to_drawc1
+  if (fECanvasArray==nullptr) return (TVirtualPad *) nullptr;
 
-TVirtualPad *ejungwoo::drawc(int i,TString opt) { //jump_to_drawc1
-  auto ejcvs=(ecanvas*)fEJCanvasArray->At(i);
-  if(ejcvs!=nullptr)
-    return ejcvs->drawc(opt);
-  return (TVirtualPad *) nullptr;
-}
-TVirtualPad *ejungwoo::drawc(TString name,TString opt) { //jump_to_drawc2
-  auto ejcvs=(ecanvas*)fEJCanvasArray->FindObject(name);
-  if(ejcvs!=nullptr)
-    return ejcvs->drawc(opt);
+  auto necvs = fECanvasArray -> GetEntries();
+  ejungwoo::ecanvas *ecvs = nullptr;
+       if (ni.oxi() && necvs<=ni.i) ecvs = (ecanvas *) fECanvasArray -> At(ni.i);
+  else if (ni.oxname())             ecvs = (ecanvas *) fECanvasArray -> FindObject(ni.name);
+  else return (TVirtualPad *) nullptr;
+
+  if(ecvs!=nullptr) return ecvs -> draw(opt);
   return (TVirtualPad *) nullptr;
 }
 
 void ejungwoo::drawall(TString opt) {
-  if (fEJCanvasArray==nullptr) return;
-  auto navcvs = fEJCanvasArray->GetEntries();
-  for(auto iacvs=0;iacvs<navcvs;++iacvs) {
-    auto ejcvs=(ecanvas*)fEJCanvasArray->At(iacvs);
-    ejcvs->drawc(opt);
+  if (fECanvasArray==nullptr) return;
+
+  auto necvs = fECanvasArray -> GetEntries();
+  for(auto iacvs=0;iacvs<necvs;++iacvs) {
+    auto ecvs = (ecanvas*) fECanvasArray -> At(iacvs);
+    ecvs -> draw(opt);
   }
 }
 
-void ejungwoo::printc(int i) {
-  auto ejcvs=(ecanvas*)fEJCanvasArray->At(i);
-  if(ejcvs!=nullptr)
-    return ejcvs->printc();
-}
-void ejungwoo::printc(TString name) {
-  auto ejcvs=(ecanvas*)fEJCanvasArray->FindObject(name);
-  if(ejcvs!=nullptr)
-    return ejcvs->printc();
+void ejungwoo::printc(ejungwoo::namei ni) {
+  if (fECanvasArray==nullptr) return;
+
+  auto necvs = fECanvasArray -> GetEntries();
+  ejungwoo::ecanvas *ecvs = nullptr;
+       if (ni.oxi() && necvs<=ni.i) ecvs = (ecanvas *) fECanvasArray -> At(ni.i);
+  else if (ni.oxname())             ecvs = (ecanvas *) fECanvasArray -> FindObject(ni.name);
+  else return;
+
+  if(ecvs!=nullptr)
+    return ecvs -> print();
 }
 
-void ejungwoo::saveall(TString opt) {
-  if (fEJCanvasArray==nullptr) return;
-  auto navcvs = fEJCanvasArray->GetEntries();
-  for(auto iacvs=0;iacvs<navcvs;++iacvs) {
-    auto ejcvs=(ecanvas*)fEJCanvasArray->At(iacvs);
-    ejcvs->save(opt);
+void ejungwoo::saveallecvs(TString opt) {
+  if (fECanvasArray==nullptr) return;
+  auto necvs = fECanvasArray -> GetEntries();
+  for(auto iacvs=0; iacvs<necvs; ++iacvs) {
+    auto ecvs = (ecanvas *) fECanvasArray -> At(iacvs);
+    ecvs -> save(opt);
   }
 }
 
-void ejungwoo::savecvsall(Option_t *opt) {
+void ejungwoo::saveallcvs(Option_t *opt) {
   if (fCanvasArray==nullptr) return;
-  auto navcvs = fCanvasArray->GetEntries();
-  for(auto icvs=0;icvs<navcvs;++icvs) {
-    auto cvs=(TCanvas*)fCanvasArray->At(icvs);
+  auto necvs = fCanvasArray -> GetEntries();
+  for(auto icvs=0; icvs<necvs; ++icvs) {
+    auto cvs = (TCanvas *) fCanvasArray -> At(icvs);
     ejungwoo::save(cvs,opt);
   }
 }
@@ -3717,7 +3856,20 @@ TGraphErrors *ejungwoo::fitgsy(TH1 *hist, int ndivisions, double c, int entry_cu
 
 TString ejungwoo::getpar(const char *name) { return (fParameters -> FindObject(name)) -> GetTitle(); }
 void ejungwoo::setpar(const char *name, int         val) { setpar(name,Form("%d",val)); }
-void ejungwoo::setpar(const char *name, double      val) { setpar(name,Form("%f",val)); }
+void ejungwoo::setpar(const char *name, double      val) {
+  TString vstring = Form("%f",val);
+
+  auto posdot = vstring.Index(".");
+  auto poslast = vstring.Sizeof()-2;
+  auto lstring = TString(vstring(poslast));
+  if (posdot>=0&&posdot<poslast)
+    while (lstring=="0") {
+      vstring.Remove(poslast);
+      poslast = vstring.Sizeof()-2;
+      lstring = TString(vstring(poslast));
+    }
+  setpar(name,vstring);
+}
 void ejungwoo::setpar(const char *name, Long64_t    val) { setpar(name,Form("%lld",val)); }
 void ejungwoo::setpar(const char *name, const char *val) {
   TString name_in = name;
@@ -3874,7 +4026,7 @@ ejungwoo::cvshist ejungwoo::drawv(ejungwoo::variable var, TTree *tree)
   return cvshist(cvs,hist);
 }
 
-TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree)
+TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree) // jumpto_tpv
 {
   TString exp0 = var.expression;
   TString cutn0 = var.cut.GetName();
@@ -3884,26 +4036,25 @@ TH1 *ejungwoo::tp(ejungwoo::variable var, TTree *tree)
 
   cutn0.ToLower();
   cutt0.ToLower();
-  if (cutn0=="$$(gcut)"||cutt0=="$$(gcut)") {
-    cutn0 = fCurrentCut.GetName();
-    cutt0 = fCurrentCut.GetTitle();
-  }
-
-  for (auto name : { &exp0, &cutn0, &cutt0, &name0, &title0 })
-    while (name->Index("$$")>=0)
-      replace_parameters(*name);
 
   return tp(tree, exp0, TCut(cutn0,cutt0), name0, title0, var.binn.n, var.binn.min, var.binn.max, var.binn2.n, var.binn2.min, var.binn2.max);
 }
 
 TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString title,int nx,double x1,double x2,int ny,double y1,double y2) //jumpto_tp0
 {
-  TString cutname = cut.GetName();
-  TString cuttitle = cut.GetTitle();
-  //if (cuttitle=="") { cutname="nocut"; }
-  if (cutname=="CUT") {}
-  else if (!cutname.IsNull())
-    name = name+"__"+cutname;
+  //for (auto val : { &formula, &cut_name, &cut_title, &name, &title })
+  for (auto val : { &formula, &name, &title })
+    replace_parameters(*val);
+  //cut = TCut(cut_name, cut_title);
+
+  replace_parameters(*(&cut));
+
+  TString cut_name = cut.GetName();
+  TString cut_title = cut.GetTitle();
+
+  if (cut_name=="CUT") {}
+  else if (!cut_name.IsNull())
+    name = name+"__"+cut_name;
   name = makename(name);
   name = toname(name);
 
@@ -3915,41 +4066,6 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
       ny=200;
 
   TH1 *h;
-
-  /*
-  if((x1==0&&x2==0)||(y1==0||y2==0)) {
-    if(formula.Index(":")>=0) {
-      TObjArray *tokens = formula.Tokenize(":");
-      TString bnamex=((TObjString *)tokens->At(1))->GetString();
-      TString bnamey=((TObjString *)tokens->At(0))->GetString();
-      if (x1==0&&x2==0) {
-        x1=tree->GetMinimum(bnamex);
-        x2=tree->GetMaximum(bnamex);
-        auto x3=(x2-x1)/10.;
-        x2=x2+x3;
-        x1=x1-x3;
-      }
-      if (y1==0&&y2==0) {
-        y1=tree->GetMinimum(bnamey);
-        y2=tree->GetMaximum(bnamey);
-        auto y3=(y2-y1)/10.;
-        y2=y2+y3;
-        y1=y1-y3;
-      }
-      if(title.IsNull()) title=name+";"+bnamex+";"+bnamey;
-      h=new TH2D(name,title,nx,x1,x2,ny,y1,y2);
-    }
-    else {
-      x1=tree->GetMinimum(formula);
-      x2=tree->GetMaximum(formula);
-      auto x3=(x2-x1)/10.;
-      x2=x2+x3;
-      x1=x1-x3;
-      if(title.IsNull()) title=name+";"+formula;
-      h=new TH1D(name,title,nx,x1,x2);
-    }
-  }
-  */
 
   TString bnamex;
   TString bnamey;
@@ -3981,9 +4097,6 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
     h=new TH1D(name,title,nx,x1,x2);
   }
   else {
-    //TObjArray *tokens = formula.Tokenize(":");
-    //TString bnamex=((TObjString *)tokens->At(1))->GetString();
-    //TString bnamey=((TObjString *)tokens->At(0))->GetString();
     if(title.IsNull()) title=name+";"+bnamex+";"+bnamey;
     else if (title.Index(";")<0)
       title=title+";"+bnamex+";"+bnamey;
@@ -3992,12 +4105,12 @@ TH1 *ejungwoo::tp(TTree *tree,TString formula,TCut cut,TString name,TString titl
 
   if (fVerboseInfo) {
     if(!TString(cut).IsNull())  {
-      if (ny<0) std::cout<<"tpj "<<name<<": "<<tree->GetName()<<Form("(%d,%.0f,%.0f)",nx,x1,x2)<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
-      else      std::cout<<"tpj "<<name<<": "<<tree->GetName()<<Form("(%d,%.0f,%.0f, %d,%.0f,%.0f)",nx,x1,x2,ny,y1,y2)<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+      if (ny<0) std::cout<<"tpj "<<name<<Form("(%d,%.0f,%.0f)",nx,x1,x2)<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
+      else      std::cout<<"tpj "<<name<<Form("(%d,%.0f,%.0f;%d,%.0f,%.0f)",nx,x1,x2,ny,y1,y2)<<": "<<tree->GetName()<<"->[f:"<<formula<<"],[c:"<<TString(cut)<<"]->";
     }
     else  {
-      if (ny<0) std::cout<<"tpj "<<name<<": "<<tree->GetName()<<Form("(%d,%.0f,%.0f)",nx,x1,x2)<<"->[f:"<<formula<<"]->";
-      else      std::cout<<"tpj "<<name<<": "<<tree->GetName()<<Form("(%d,%.0f,%.0f, %d,%.0f,%.0f)",nx,x1,x2,ny,y1,y2)<<"->[f:"<<formula<<"]->";
+      if (ny<0) std::cout<<"tpj "<<name<<Form("(%d,%.0f,%.0f)",nx,x1,x2)<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
+      else      std::cout<<"tpj "<<name<<Form("(%d,%.0f,%.0f;%d,%.0f,%.0f)",nx,x1,x2,ny,y1,y2)<<": "<<tree->GetName()<<"->[f:"<<formula<<"]->";
     }
   }
 
@@ -4030,16 +4143,16 @@ TH1 *ejungwoo::tp(TString name,TTree *tree,TString formula,TCut cut,TString titl
   return make_h(h);
 }
 
-TCutG *ejungwoo::cutg(TString f, TString cutname, TString x, TString y) {
+TCutG *ejungwoo::cutg(TString f, TString cut_name, TString x, TString y) {
   auto file=new TFile(f.Data(),"read");
-  auto cg=(TCutG *) file->Get(cutname.Data());
+  auto cg=(TCutG *) file->Get(cut_name.Data());
   cg->SetVarX(x.Data());
   cg->SetVarY(y.Data());
   return cg;
 }
 
-TCutG *ejungwoo::cutg(TFile *file, TString cutname, TString x, TString y) {
-  auto cg=(TCutG *) file->Get(cutname.Data());
+TCutG *ejungwoo::cutg(TFile *file, TString cut_name, TString x, TString y) {
+  auto cg=(TCutG *) file->Get(cut_name.Data());
   cg->SetVarX(x.Data());
   cg->SetVarY(y.Data());
   return cg;
@@ -4067,10 +4180,10 @@ TH1 *ejungwoo::cutg(TH1 *h, TCutG *cut) {
     }
   }
 
-  TString cutname = cut -> GetName();
-  if (!cutname.IsNull()) {
-    hnew -> SetName(Form("%s_%s",hnew->GetName(),cutname.Data()));
-    hnew -> SetTitle(Form("%s_%s",hnew->GetTitle(),cutname.Data()));
+  TString cut_name = cut -> GetName();
+  if (!cut_name.IsNull()) {
+    hnew -> SetName(Form("%s_%s",hnew->GetName(),cut_name.Data()));
+    hnew -> SetTitle(Form("%s_%s",hnew->GetTitle(),cut_name.Data()));
   }
 
   if (ejungwoo::fVerboseInfo)
@@ -4300,9 +4413,9 @@ void ejungwoo::titles::set(const char *title)
 }
 
 void ejungwoo::titles::set_hist(TH1 *hist) { hist -> SetTitle(data()); }
-bool ejungwoo::titles::null() { if (main.IsNull()&&x.IsNull()&&y.IsNull()&&z.IsNull()) return true; return false; }
-TString ejungwoo::titles::data() { return main+";"+x+";"+y+";"+z; }
-TString ejungwoo::titles::print(bool show=true) {
+bool ejungwoo::titles::null() const { if (main.IsNull()&&x.IsNull()&&y.IsNull()&&z.IsNull()) return true; return false; }
+TString ejungwoo::titles::data() const { return main+";"+x+";"+y+";"+z; }
+TString ejungwoo::titles::print(bool show=true) const {
   if (show)
     cout << data() << endl;
   return data();
