@@ -48,7 +48,7 @@ namespace ejungwoo
 {
   class drawing;
   class ecanvas;
-  class histstat;
+  class histsummary;
   class variable;
 
   class binning {
@@ -63,7 +63,8 @@ namespace ejungwoo
 
       binning(binning const & binn) : n(binn.n), min(binn.min), max(binn.max), w((max-min)/n), islog(binn.islog) {}
       binning(int n_=-1, double min_=0, double max_=0, double w_=-1, bool islog_=false);
-      binning(TH1 *hist, int i=0);
+      binning(TH1 *hist, int i=1);
+      binning(TGraph *graph, int i=1);
       void init();
       void setn(double n_); ///< set number of the bins
       void setw(double w_); ///< set width of the bin
@@ -81,6 +82,7 @@ namespace ejungwoo
       double high_edge(int i=-1) const; ///< return high edge of the i-bin (i:1~n)
       int geti(double invalue) const; ///< find bin corresponding to invalue
       double getc(int ibin) const; ///< find bin center value
+      double fullw() const;
       TString print(bool show=true) const; ///< print
       void operator=(const binning binn); ///< copy binning
       bool isouf();
@@ -104,6 +106,8 @@ namespace ejungwoo
       TString data() const; /// return main;x;y;z
       TString print(bool show=true) const; ///< print
       void operator=(const titles & tt); ///< copy title
+      TString operator()() const { return data(); }
+      TString operator[](int i) const { if (i==1) return x; else if (i==2) return y; else if (i==3) return z; return main; } 
   };
 
   class cvshist {
@@ -206,6 +210,7 @@ namespace ejungwoo
   bool fDummyTreeProjection = false;
   bool fFast = false;
   bool fSetDrawVersionMark = true;
+  bool fShortInfoPrint = true;
 
   Color_t color_cenum = 3001;
 
@@ -217,6 +222,7 @@ namespace ejungwoo
   TClonesArray *fParameters = nullptr;
   TObjArray *fCutArray = nullptr;
   TObjArray *fCutGArray = nullptr;
+  TObjArray *fSlicedHistogramArray = nullptr;
 
   int fNumColors = 7;
   //Color_t fColorList[] = { kGray+2, kRed, kSpring-6, kAzure+7, kViolet-5, kYellow, kGreen+1, kPink+7, kGray+1 };
@@ -232,7 +238,17 @@ namespace ejungwoo
     /*n=8 */{4, 2}, /*n=9 */{3, 3}, /*n=10*/{5, 2}, /*n=11*/{4, 3},
     /*n=12*/{4, 3}, /*n=13*/{5, 3}, /*n=14*/{5, 3}, /*n=15*/{5, 3},
     /*n=16*/{4, 4}, /*n=17*/{6, 3}, /*n=18*/{6, 3}, /*n=19*/{5, 4},
-    /*n=20*/{5, 4}};
+    /*n=20*/{5, 4},
+    {6,4},{6,4},{6,4},{6,4},
+    {6,5},{6,5},{6,5},{6,5},{6,5},{6,5},
+    {7,5},{7,5},{7,5},{7,5},{7,5},
+    {7,6},{7,6},{7,6},{7,6},{7,6},{7,6},{7,6},
+    {8,6},{8,6},{8,6},{8,6},{8,6},{8,6},
+    {9,6},{9,6},{9,6},{9,6},{9,6},{9,6},
+    {9,7},{9,7},{9,7},{9,7},{9,7},{9,7},{9,7},{9,7},{9,7},
+    {9,8},{9,8},{9,8},{9,8},{9,8},{9,8},{9,8},{9,8},{9,8},
+    {10,8},{10,8},{10,8},{10,8},{10,8},{10,8},{10,8},{10,8}
+    };
 
   /********************************************************/
 
@@ -288,6 +304,7 @@ namespace ejungwoo
   void gdummytp(bool val=true);
   void gfast(bool val=true);
   void gsetvmark(bool val=false);
+  void gshortprint(bool val=true);
 
   void gcolors();
 
@@ -405,10 +422,13 @@ namespace ejungwoo
   int  pdg_idx(int pdg); ///< find corresponding index for pdg
   double max(TH1 *h); ///< get maximum value of histogram
   double max(TH1 *h, int &bin, double &x); ///< get maximum value of histogram
-  TObjArray *fitgsx_list(TH1 *hist, int ndivisions=20, double c=1.5, int entry_cut=1000);
-  TObjArray *fitgsy_list(TH1 *hist, int ndivisions=20, double c=1.5, int entry_cut=1000);
-  TGraphErrors *fitgsx(TH1 *hist, int ndivisions=20, double c=1.5, int entry_cut=1000);
-  TGraphErrors *fitgsy(TH1 *hist, int ndivisions=20, double c=1.5, int entry_cut=1000);
+  TObjArray *hsarray(TH1 *hist, int axisIndex=1, int ndivisions=20);
+  TObjArray *hlist_fitgsx(TH1 *hist, int ndivisions=20, double c=1.5, int integral_cut=1000);
+  TObjArray *hlist_fitgsy(TH1 *hist, int ndivisions=20, double c=1.5, int integral_cut=1000);
+  TGraphErrors *fitgsx(TH1 *hist, int ndivisions=20, double c=1.5, int integral_cut=1000);
+  TGraphErrors *fitgsy(TH1 *hist, int ndivisions=20, double c=1.5, int integral_cut=1000);
+  TObjArray *hlist_maxs(TH1 *hist, int axisIndex=1, int rebin=1, int ndivisions=20, int integral_cut=1000);
+  TGraphErrors *hmaxs  (TH1 *hist, int axisIndex=1, int rebin=1, int ndivisions=20, int integral_cut=1000);
   double fwrm(TH1 *h, double ratio, double npx, double &x0, double &x1, double &q); ///< full width [ratio] maximum : return width of histogram at y which the data becomes [ratio] of maximum (ratio*maximum)
   double fwhm(TH1 *h, double &x0, double &x1, double &q); ///< FWHM(Full Width Half Maximum) of histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q);
   double fwhm(TH1 *h); ///< FWHM(Full Width Half Maximum) with histogram. ndx=0.5 of fwrm(f,ration,ndx,x0,x1,q) with no pull values
@@ -438,7 +458,8 @@ namespace ejungwoo
   // TF1
   TF1 *make_f(TF1 *f); ///< make function stylish!, jumpto_makef
   TF1 *settitle(TF1 *f, TString title); ///< set title of function histogram
-  TF1 *fit1(TH1 *h, Option_t *opt="RQ0");
+  TF1 *fitgraph(TGraph *g, TString fncExpression="pol1", Option_t *opt="RQ0");
+  TF1 *fithist(TH1 *h, TString fncExpression="pol1", Option_t *opt="RQ0");
   //TF1 *fitg(TGraph *g, TH1 *h, double c=2.5, Option_t *opt="RQ0");
   TF1 *fitg(TF1 *f1, TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma. f will be use for fit function (gaussian)
   TF1 *fitg(TH1 *h, double c=2.5, Option_t *opt="RQ0"); ///< single gaussian fit of histogram in range of -c*sigma ~ +c*sigma
@@ -580,6 +601,7 @@ class ejungwoo::drawing : public TNamed {
     bool fLogx = false, fLogy = false, fLogz = false;
     bool fGridx = false, fGridy = false;
     bool fUseMultipleLegend = false;
+    bool fUseFastMake = false;
     double fX1Range, fX2Range, fY1Range, fY2Range;
     bool fFixColor = 0;
 
@@ -593,7 +615,6 @@ class ejungwoo::drawing : public TNamed {
       if (fDrawOption.Index("logx")>=0) { fDrawOption.ReplaceAll("logx",""); fLogx = true; }
       if (fDrawOption.Index("logy")>=0) { fDrawOption.ReplaceAll("logy",""); fLogy = true; }
       if (fDrawOption.Index("logz")>=0) { fDrawOption.ReplaceAll("logz",""); fLogz = true; }
-
       if (fDrawOption.Index("gridx")>=0) { fDrawOption.ReplaceAll("gridx",""); fGridx = true; }
       if (fDrawOption.Index("gridy")>=0) { fDrawOption.ReplaceAll("gridy",""); fGridy = true; }
 
@@ -601,8 +622,12 @@ class ejungwoo::drawing : public TNamed {
       if (fDrawOption.Index("addx")>=0) { fDrawOption.ReplaceAll("addx",""); addx = true; }
       if (fDrawOption.Index("rangex")>=0) { fDrawOption.ReplaceAll("rangex",""); fSetRange = false; }
       if (fDrawOption.Index("colorx")>=0) { fDrawOption.ReplaceAll("colorx",""); fSetColor = false; }
-
       if (fDrawOption.Index("addl")>=0) { fDrawOption.ReplaceAll("addl",""); fUseMultipleLegend = true; }
+      if (fDrawOption.Index("fast")>=0) { fDrawOption.ReplaceAll("fast",""); fUseFastMake = true; }
+
+      bool preFast = fFast;
+      if (fUseFastMake)
+        gfast();
 
       if (fObject->InheritsFrom(TVirtualPad::Class())) {
         fObjectType = kCanvas;
@@ -720,8 +745,10 @@ class ejungwoo::drawing : public TNamed {
         fObjectType = kLegend;
         if (fDrawOption.IsNull()) fDrawOption = "same";
       }
-      else
+      else {
         fObjectType = kOther;
+        fLegendOption = fDrawOption;
+      }
 
       if (addx)
         fLegendOption = "";
@@ -732,13 +759,15 @@ class ejungwoo::drawing : public TNamed {
         Print();
 
       fDrawOption.ToLower();
+
+      if (fUseFastMake)
+        gfast(preFast);
     }
 
     /****************************************************************/
     void OmitDraw(bool val=true) { fOmitDraw = val; }
     virtual void Draw(Option_t *draw_option="") {
       if (!fOmitDraw) {
-        //Print();
         fDrawOption.ReplaceAll(" ","");
         fObject -> Draw(fDrawOption);
       }
@@ -1135,21 +1164,33 @@ class ejungwoo::ecanvas : public TObjArray
     }
 };
 
-class ejungwoo::histstat : public TObject {
+class ejungwoo::histsummary : public TObject {
   private:
     TH1D *fHist;
-    double fdX = 0;
-    double fdY = 0;
-    double fMeanX = 0;
-    double fMeanY = 0;
-    double fSigmaX = 0;
-    double fSigmaY = 0;
+    double fdX = -1;
+    double fdY = -1;
+    double fMeanX = -1;
+    double fMeanY = -1;
+    double fSigmaX = -1;
+    double fSigmaY = -1;
 
   public:
-    histstat(TH1D *hist): TObject(), fHist(hist) {}
-    virtual ~histstat() {}
+    histsummary(TH1D *hist): TObject(), fHist(hist) {}
+    virtual ~histsummary() {}
 
-    TH1D  *GetHist()   { return fHist; }
+    TString print(bool show=true) const {
+      TString line;
+      if (fHist==nullptr) line = TString("histstats")+" d:"+dbstr(fdX)+" "+dbstr(fdY)+" | m:"+dbstr(fMeanX)+" "+dbstr(fMeanY)+" | s:"+dbstr(fSigmaX)+" "+dbstr(fSigmaY);
+      else           line = TString(fHist->GetName())+" d:"+dbstr(fdX)+" "+dbstr(fdY)+" | m:"+dbstr(fMeanX)+" "+dbstr(fMeanY)+" | s:"+dbstr(fSigmaX)+" "+dbstr(fSigmaY);
+      if (show) cout << line << endl;
+      return line;
+    }
+
+    virtual void Print(Option_t *option="") const {
+      print(1);
+    }
+
+    TH1D  *GetHist() { return fHist; }
     void SetValues(double dX, double dY, double meanX, double meanY, double sigmaX, double sigmaY) {
       fdX =     dX;
       fdY =     dY;
@@ -1178,12 +1219,12 @@ void ejungwoo::binning::init() {
   if (n>0&&w<=0) w = (max-min)/n;
 }
 
-ejungwoo::binning::binning(TH1 *hist, int i=0) {
-  if (i==1) {
+ejungwoo::binning::binning(TH1 *hist, int i) {
+  if (i==2) {
     n = hist -> GetNbinsY();
     min = hist -> GetYaxis() -> GetBinLowEdge(1);
     max = hist -> GetYaxis() -> GetBinUpEdge(n);
-  } else if (i==2) {
+  } else if (i==3) {
     n = hist -> GetNbinsZ();
     min = hist -> GetZaxis() -> GetBinLowEdge(1);
     max = hist -> GetZaxis() -> GetBinUpEdge(n);
@@ -1191,6 +1232,37 @@ ejungwoo::binning::binning(TH1 *hist, int i=0) {
     n = hist -> GetNbinsX();
     min = hist -> GetXaxis() -> GetBinLowEdge(1);
     max = hist -> GetXaxis() -> GetBinUpEdge(n);
+  }
+
+  w = (max-min)/n;
+
+  islog = 0;
+}
+
+ejungwoo::binning::binning(TGraph *graph, int i)
+{
+  n = graph -> GetN();
+
+  double x1,x2,y1,y2;
+  graph -> ComputeRange(x1,y1,x2,y2);
+
+  double xe1 = (x2-x1)/(n-1)/2.;
+  double xe2 = (x2-x1)/(n-1)/2.;
+  double ye1 = (y2-y1)/(n-1)/2.;
+  double ye2 = (y2-y1)/(n-1)/2.;
+  if (graph->InheritsFrom(TGraphErrors::Class())) {
+    xe1 = graph -> GetErrorX(0);
+    xe2 = graph -> GetErrorX(n-1);
+    ye1 = graph -> GetErrorY(0);
+    ye2 = graph -> GetErrorY(n-1);
+  }
+
+  if (i==2) {
+    min = y1 - ye1;
+    max = y2 + ye2;
+  } else {
+    min = x1 - xe1;
+    max = x2 + xe2;
   }
 
   w = (max-min)/n;
@@ -1228,6 +1300,7 @@ double ejungwoo::binning::low_edge(int i=1)      const { return min+(i-1)*(max-m
 double ejungwoo::binning::high_edge(int i=-1)    const { if (i==-1) i=n; return min+(i)*(max-min)/n; }
 int    ejungwoo::binning::geti(double invalue)   const { return int((invalue-min)/w); }
 double ejungwoo::binning::getc(int ibin)         const { return (min + (ibin-.5)*w); }
+double ejungwoo::binning::fullw()                const { return (max - min); }
 TString ejungwoo::binning::print(bool show=true) const {
   TString line;
   line = TString("(")+n+","+min+","+max+";"+w+")";
@@ -1261,9 +1334,11 @@ class ejungwoo::variable {
     void setCut0       (TCut    cut_)         { cut0 = cut_; cut = cut0;  }
     void setCut        (TCut    cut_)         { cut        = cut_;        }
     void setTitle      (titles  title_)       { title      = title_;      }
+    void setLogs       (TString logs_)        { logs       = logs_;       }
     void setBinn       (binning binn_)        { binn       = binn_;       }
     void setBinn2      (binning binn2_)       { binn2      = binn2_;      }
-    void setLogs       (TString logs_)        { logs       = logs_;       }
+    void setBinn       (int n_, double min_, double max_)  { binn  = binning(n_,min_,max_); }
+    void setBinn2      (int n_, double min_, double max_)  { binn2 = binning(n_,min_,max_); }
 
     void setw(double w) { binn.setw(w); }
     void setn(int n) { binn.setn(n); }
@@ -1329,8 +1404,10 @@ class ejungwoo::variable {
     TH1 *getHist(TString name) { return (TH1 *) histArray.FindObject(name); }
     void setNewHistName() {
       replace_parameters(*(&cut));
-      TString cut_name = cut.GetName();
-      TString histNameReplaced = replace_parameters(histName)+"__"+replace_parameters(cut_name);
+      TString cut_name = replace_parameters(cut.GetName());
+      TString histNameReplaced;
+      histNameReplaced = replace_parameters(histName);
+      if (!cut_name.IsNull()) histNameReplaced = histNameReplaced+"__"+cut_name;
       TString histNameTest;
       int copyNo = 0;
       while (1) {
@@ -1374,6 +1451,10 @@ class ejungwoo::variable {
     ejungwoo::ecanvas *drawaddsame(TTree *tree, TString ename, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -1, draw_option, draw_title, vm, 0); }
     ejungwoo::ecanvas *drawaddnext(TTree *tree, TString ename, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -2, draw_option, draw_title, vm, 0); }
     ejungwoo::ecanvas *drawaddhist(TTree *tree, TString ename, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -2, draw_option, draw_title, vm, 1); }
+
+    ejungwoo::ecanvas *drawaddsame(TString ename, TTree *tree=nullptr, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -1, draw_option, draw_title, vm, 0); }
+    ejungwoo::ecanvas *drawaddnext(TString ename, TTree *tree=nullptr, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -2, draw_option, draw_title, vm, 0); }
+    ejungwoo::ecanvas *drawaddhist(TString ename, TTree *tree=nullptr, TString draw_option="", TString draw_title="", TString vm="") { return drawadd(tree, ename, -2, draw_option, draw_title, vm, 1); }
 
     variable &operator+(const char *logaxes_) { logs += logaxes_; return *this; }
     variable *add(variable *vary) {
@@ -1529,21 +1610,18 @@ void ejungwoo::replace_parameters_cutg()
  *   - "w" : write inner layer histograms and fits to root file
  */
 void ejungwoo::gverbose(TString level) {
-  fVerboseInfo = false;
-  fVerboseRich = false;
-  fVerboseDraw = false;
-  fVerboseSave = false;
-  if (level.Index("-i")>=0) fVerboseInfo = false;
-  if (level.Index("-r")>=0) fVerboseRich = false;
-  if (level.Index("-d")>=0) fVerboseDraw = false;
-  if (level.Index("-s")>=0) fVerboseSave = false;
-  if (level.Index("-w")>=0) fVerboseWrte = false;
-
-  if (level.Index("i")>=0) fVerboseInfo = true;
-  if (level.Index("r")>=0) fVerboseRich = true;
-  if (level.Index("d")>=0) fVerboseDraw = true;
-  if (level.Index("s")>=0) fVerboseSave = true;
-  if (level.Index("w")>=0) fVerboseWrte = true;
+  if (level.Index("-all")>=0) {
+    fVerboseInfo = false;
+    fVerboseRich = false;
+    fVerboseDraw = false;
+    fVerboseSave = false;
+    fVerboseWrte = false;
+  }
+  if (level.Index("-i")>=0) fVerboseInfo = false; else if (level.Index("i")>=0) fVerboseInfo = true;
+  if (level.Index("-r")>=0) fVerboseRich = false; else if (level.Index("r")>=0) fVerboseRich = true;
+  if (level.Index("-d")>=0) fVerboseDraw = false; else if (level.Index("d")>=0) fVerboseDraw = true;
+  if (level.Index("-s")>=0) fVerboseSave = false; else if (level.Index("s")>=0) fVerboseSave = true;
+  if (level.Index("-w")>=0) fVerboseWrte = false; else if (level.Index("w")>=0) fVerboseWrte = true;
 }
 
 /**
@@ -1708,9 +1786,10 @@ void ejungwoo::glegendleft(bool val) { fDrawLgndLeft = val; }
 void ejungwoo::glegendbyside(bool val) { fDrawLegendBySide = val; }
 void ejungwoo::grootcode(bool val) { fPrintToRootCode = (val?"true":""); }
 void ejungwoo::grootcode(TString val) { fPrintToRootCode = val; }
-void ejungwoo::gdummytp(bool val=true) { fDummyTreeProjection = val; }
-void ejungwoo::gfast(bool val=true) { fFast = val; }
-void ejungwoo::gsetvmark(bool val=false) { fSetDrawVersionMark = !val; }
+void ejungwoo::gdummytp(bool val) { fDummyTreeProjection = val; }
+void ejungwoo::gfast(bool val) { fFast = val; }
+void ejungwoo::gsetvmark(bool val) { fSetDrawVersionMark = !val; }
+void ejungwoo::gshortprint(bool val) { fShortInfoPrint = true; }
 void ejungwoo::gcolors()
 {
   new TColor(color_cenum ,0.647,0.000,0.129);
@@ -3743,11 +3822,19 @@ TF1 *ejungwoo::fitg(TH1 *h,double c,Option_t *opt) {
   return fitg(f,h,c,opt);
 }
 
-TF1 *ejungwoo::fit1(TH1 *h, Option_t *opt="RQ0")
+TF1 *ejungwoo::fitgraph(TGraph *g, TString fncExpression, Option_t *opt)
+{
+  auto binn = binning(g);
+  auto f1 = new TF1(Form("%s_fit",g->GetName()),fncExpression,binn.min,binn.max);
+  g -> Fit(f1,opt);
+  return f1;
+}
+
+TF1 *ejungwoo::fithist(TH1 *h, TString fncExpression, Option_t *opt)
 {
   auto binn = binning(h);
-  auto f1 = new TF1(Form("%s_fit1",h->GetName()),"pol1",binn.min,binn.max);
-  h -> Fit(f1);
+  auto f1 = new TF1(Form("%s_fit",h->GetName()),fncExpression,binn.min,binn.max);
+  h -> Fit(f1,opt);
   return f1;
 }
 
@@ -4081,57 +4168,124 @@ void ejungwoo::saveallecvs(TString opt) {
   }
 }
 
+
+TObjArray *ejungwoo::hsarray(TH1 *hist, int axisIndex, int ndivisions)
+{
+  TString hname = hist -> GetName();
+  auto hist2D = (TH2 *) hist;
+  auto title = titles(hist);
+  auto binn1 = binning(hist, axisIndex);
+  auto binn2 = binning(hist, 3-axisIndex);
+  auto nbins1 = binn1.n;
+  auto nbins2 = binn2.n;
+  auto dbin1 = nbins1/ndivisions;
+  TString ttl1 = title[  axisIndex].IsNull()?Form("%d-var",  axisIndex):title[  axisIndex];
+  TString ttl2 = title[3-axisIndex].IsNull()?Form("%d-var",3-axisIndex):title[3-axisIndex];
+
+  fSlicedHistogramArray = new TObjArray();
+  for (auto idxProjection=0; idxProjection<ndivisions; ++idxProjection)
+  {
+    auto bin1 = (idxProjection)*dbin1+1;
+    auto bin2 = (idxProjection+1)*dbin1;
+    TH1D *hist_projected;
+         if (axisIndex==1) hist_projected = hist2D -> ProjectionY(hname+"_pj"+idxProjection,bin1,bin2);
+    else if (axisIndex==2) hist_projected = hist2D -> ProjectionX(hname+"_pj"+idxProjection,bin1,bin2);
+    TString title_projected = ttl1+"="+ejungwoo::dbstr(binn1.low_edge(bin1))+"~"+ejungwoo::dbstr(binn1.high_edge(bin2))+";"+ttl2+";Count";
+    hist_projected -> SetTitle(title_projected);
+    auto hsummary = new ejungwoo::histsummary(hist_projected);
+    fSlicedHistogramArray -> Add(hsummary);
+  }
+
+  return fSlicedHistogramArray;
+}
+
+
+TObjArray *ejungwoo::hlist_maxs(TH1 *hist, int axisIndex, int rebin, int ndivisions, int integral_cut)
+{
+  auto array = hsarray(hist,axisIndex,ndivisions);
+  auto binn1 = binning(hist,axisIndex);
+  binn1.setn(ndivisions);
+  auto binn2 = binning(hist,3-axisIndex);
+
+  for (auto idxProjection=0; idxProjection<ndivisions; ++idxProjection)
+  {
+    auto hsummary = (histsummary *) array -> At(idxProjection);
+    auto hist_projected = hsummary -> GetHist();
+    if (hist_projected->Integral()<integral_cut) {
+      hist_projected -> SetLineColor(kGray);
+      continue;
+    }
+
+    hist_projected -> Rebin(rebin);
+
+    auto binMax = hist_projected -> GetMaximumBin();
+    auto xAtBinMax = hist_projected -> GetXaxis() -> GetBinCenter(binMax);
+    //auto yAtBinMax = hist_projected -> GetBinContent(binMax);
+
+    if (fVerboseDraw) {
+      TString ename = TString(hist->GetName()) + "_hsA"+axisIndex;
+      //ejungwoo::addnext(ename,hist_projected,"fast",hist_projected->GetName()+"("+dbstr(hist->Integral())+")");
+      ejungwoo::addnext(ename,hist_projected,"fast",TString("h")+idxProjection+"("+dbstr(hist_projected ->Integral())+")");
+      //cout << xAtBinMax << " " << hist_projected->GetBinContent(binMax) << endl;
+
+      if (fVerboseWrte && fFileDummyGraphics!=nullptr) {
+        fFileDummyGraphics -> cd();
+        hist_projected -> Write();
+      }
+    }
+
+         if (axisIndex==1) hsummary -> SetValues(binn1.fullw()/ndivisions, binn2.fullw(), binn1.getc(idxProjection+1), xAtBinMax, 0, 0);
+    else if (axisIndex==2) hsummary -> SetValues(binn1.fullw()/ndivisions, binn2.fullw(), xAtBinMax, binn1.getc(idxProjection+1), 0, 0);
+  }
+
+  return array;
+}
+
+TGraphErrors *ejungwoo::hmaxs(TH1 *hist, int axisIndex, int ndivisions, int rebin, int integral_cut)
+{
+  auto graph=new TGraphErrors();
+  if (axisIndex==1) graph -> SetName(TString(hist->GetName())+"SX");
+  else graph -> SetName(TString(hist->GetName())+"SY");
+  auto array=hlist_maxs(hist,axisIndex,ndivisions,rebin,integral_cut);
+  for (auto i=0; i<array->GetEntries(); ++i) {
+    auto hsummary=(ejungwoo::histsummary*)array->At(i);
+    if (hsummary->GetdX()>0)
+      graph->SetPoint(graph->GetN(),hsummary->GetMeanX(),hsummary->GetMeanY());
+  }
+  return make_ge(graph);
+}
+
+
 /**
  * fit 2d histogram through x with given parameters and return list of histogram data
  *
  * @param hist input histogram
  * @param ndivisions division number through x
  * @param c fit will perform in range of -c*sigma ~ c*sigma
- * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
+ * @param integral_cut if histogram entry is smaller than integral_cut, histogram and fit is ignored
  *
  * the histograms are written to fFileDummyGraphics is gverboseG(2) is used,
  * fFileDummyGraphics can be set by gfile(name) method.
  */
-TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int ndivisions, double c, int entry_cut)
+TObjArray *ejungwoo::hlist_fitgsx(TH1 *hist, int ndivisions, double c, int integral_cut)
 {
-  auto hist2D = (TH2 *) hist;
-  auto nbinsx = hist2D -> GetXaxis() -> GetNbins();
-  auto nbinsy = hist2D -> GetYaxis() -> GetNbins();
-  auto dbinx = nbinsx/ndivisions;
-
-  TObjArray *array = new TObjArray();
-
-  TString oxtitle = hist -> GetXaxis() -> GetTitle(); if (oxtitle.IsNull()) oxtitle = "xvar";
-  TString oytitle = hist -> GetYaxis() -> GetTitle(); if (oytitle.IsNull()) oytitle = "yvar";
-
-  auto y1 = hist2D -> GetYaxis() -> GetBinLowEdge(1);
-  auto y2 = hist2D -> GetYaxis() -> GetBinUpEdge(nbinsy);
+  auto array = hsarray(hist,2,ndivisions);
+  auto binn1 = binning(hist,1);
+  binn1.setn(ndivisions);
+  auto binn2 = binning(hist,2);
 
   for (auto idxProjection=0; idxProjection<ndivisions; ++idxProjection)
   {
-    auto binx1 = (idxProjection)*dbinx+1;
-    auto binx2 = (idxProjection+1)*dbinx;
-    auto hist_projected = hist2D -> ProjectionY(TString(hist2D->GetName())+Form("_%d",idxProjection),binx1,binx2);
-
-    auto x1 = hist2D -> GetXaxis() -> GetBinLowEdge(binx1);
-    auto x2 = hist2D -> GetXaxis() -> GetBinUpEdge(binx2);
-    TString x1_string = Form("%.2f",x1); x1_string.ReplaceAll(".00","");
-    TString x2_string = Form("%.2f",x2); x2_string.ReplaceAll(".00","");
-
-    hist_projected -> SetTitle(Form("%s=%s~%s;%s;Count",oxtitle.Data(),x1_string.Data(),x2_string.Data(),oxtitle.Data()));
-    auto entries = hist_projected -> Integral();
-    if (entries<entry_cut)
+    auto hsummary = (histsummary *) array -> At(idxProjection);
+    auto hist_projected = hsummary -> GetHist();
+    if (hist_projected->Integral()<integral_cut)
       continue;
 
     auto fit = fitg(hist_projected,c);
 
     if (fVerboseDraw) {
-      //ejungwoo::cv1();
-      //make_h(hist_projected) -> Draw();
-      //fit -> Draw("same");
-
-      TString ename = TString(hist2D->GetName()) + "hist_projected";
-      ejungwoo::addnext(ename,hist_projected);
+      TString ename = TString(hist->GetName()) + "hist_projected";
+      ejungwoo::addnext(ename,hist_projected,"fast");
       ejungwoo::addsame(ename,fit);
 
       if (fVerboseWrte && fFileDummyGraphics!=nullptr) {
@@ -4143,11 +4297,9 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int ndivisions, double c, int entry_
     if (fit->GetParameter(0)==0 && fit->GetParameter(2)==0)
       continue;
 
-    auto meanerror = new ejungwoo::histstat(hist_projected);
-    meanerror -> SetValues(x2-x1, y2-y1, (x1+x2)/2, fit->GetParameter(1), 0, fit->GetParameter(2));
-
-    array -> Add(meanerror);
+    hsummary -> SetValues(binn1.fullw()/ndivisions, binn2.fullw(), binn1.getc(idxProjection+1), fit->GetParameter(1), 0, fit->GetParameter(2));
   }
+
   return array;
 }
 
@@ -4158,50 +4310,29 @@ TObjArray *ejungwoo::fitgsx_list(TH1 *hist, int ndivisions, double c, int entry_
  * @param hist input histogram
  * @param ndivisions division number through y
  * @param c fit will perform in range of -c*sigma ~ c*sigma
- * @param entry_cut if histogram entry is smaller than entry_cut, histogram and fit is ignored
+ * @param integral_cut if histogram entry is smaller than integral_cut, histogram and fit is ignored
  *
  * the histograms are written to fFileDummyGraphics is gverboseG(2) is used,
  * fFileDummyGraphics can be set by gfile(name) method.
  */
-TObjArray *ejungwoo::fitgsy_list(TH1 *hist, int ndivisions, double c, int entry_cut) 
+TObjArray *ejungwoo::hlist_fitgsy(TH1 *hist, int ndivisions, double c, int integral_cut) 
 {
-  auto hist2D = (TH2 *) hist;
-  auto nbinsx = hist2D -> GetXaxis() -> GetNbins();
-  auto nbinsy = hist2D -> GetYaxis() -> GetNbins();
-  auto dbiny = nbinsy/ndivisions;
-
-  TObjArray *array = new TObjArray();
-
-  TString oxtitle = hist -> GetXaxis() -> GetTitle(); if (oxtitle.IsNull()) oxtitle = "xvar";
-  TString oytitle = hist -> GetYaxis() -> GetTitle(); if (oytitle.IsNull()) oytitle = "yvar";
-
-  auto x1 = hist2D -> GetXaxis() -> GetBinLowEdge(1);
-  auto x2 = hist2D -> GetXaxis() -> GetBinUpEdge(nbinsx);
+  auto array = hsarray(hist,2,ndivisions);
+  auto binn1 = binning(hist,1);
+  auto binn2 = binning(hist,2);
+  binn2.setn(ndivisions);
 
   for (auto idxProjection=0; idxProjection<ndivisions; ++idxProjection)
   {
-    auto biny1 = (idxProjection)*dbiny+1;
-    auto biny2 = (idxProjection+1)*dbiny;
-    auto hist_projected = hist2D -> ProjectionX(TString(hist2D->GetName())+Form("_%d",idxProjection),biny1,biny2);
-
-    auto y1 = hist2D -> GetYaxis() -> GetBinLowEdge(biny1);
-    auto y2 = hist2D -> GetYaxis() -> GetBinUpEdge(biny2);
-    TString y1_string = Form("%.2f",y1); y1_string.ReplaceAll(".00","");
-    TString y2_string = Form("%.2f",y2); y2_string.ReplaceAll(".00","");
-
-    hist_projected -> SetTitle(Form("%s=%s~%s;%s;Count",oytitle.Data(),y1_string.Data(),y2_string.Data(),oytitle.Data()));
-    auto entries = hist_projected -> Integral();
-    if (entries<entry_cut)
+    auto hsummary = (histsummary *) array -> At(idxProjection);
+    auto hist_projected = hsummary -> GetHist();
+    if (hist_projected->Integral()<integral_cut)
       continue;
 
     auto fit = fitg(hist_projected,c);
 
     if (fVerboseDraw) {
-      //ejungwoo::cv1();
-      //make_h(hist_projected) -> Draw();
-      //fit -> Draw("same");
-
-      TString ename = TString(hist2D->GetName()) + "hist_projected";
+      TString ename = TString(hist->GetName()) + "hist_projected";
       ejungwoo::addnext(ename,hist_projected);
       ejungwoo::addsame(ename,fit);
 
@@ -4214,52 +4345,50 @@ TObjArray *ejungwoo::fitgsy_list(TH1 *hist, int ndivisions, double c, int entry_
     if (fit->GetParameter(0)==0 && fit->GetParameter(2)==0)
       continue;
 
-    auto meanerror = new ejungwoo::histstat(hist_projected);
-    meanerror -> SetValues(x2-x1, y2-y1, fit->GetParameter(1), (y1+y2)/2, fit->GetParameter(2), 0);
-
-    array -> Add(meanerror);
+    hsummary -> SetValues(binn2.fullw()/ndivisions, binn1.fullw(), fit->GetParameter(1), binn2.getc(idxProjection+1), fit->GetParameter(2), 0);
   }
+
   return array;
 }
 
 
 /**
- * Using the data from fitgsx_list
+ * Using the data from hlist_fitgsx
  *
  * @param hist input histogram for analysis
  * @param ndivisions number of division through x
  * @param c c*sigma become the range of the fit
- * @param entry_cut the fit is ignored if the histogram entry is smaller than this cut
+ * @param integral_cut the fit is ignored if the histogram entry is smaller than this cut
  */
-TGraphErrors *ejungwoo::fitgsx(TH1 *hist, int ndivisions, double c, int entry_cut) {
+TGraphErrors *ejungwoo::fitgsx(TH1 *hist, int ndivisions, double c, int integral_cut) {
   auto h2 = (TH2 *) hist;
   auto graph=new TGraphErrors();
-  auto array=fitgsx_list(h2,ndivisions,c,entry_cut);
+  auto array=hlist_fitgsx(h2,ndivisions,c,integral_cut);
   for (auto i=0; i<array->GetEntries(); ++i) {
-    auto meanerror=(ejungwoo::histstat*)array->At(i);
-    graph->SetPoint(i,meanerror->GetMeanX(),meanerror->GetMeanY());
-    graph->SetPointError(i,meanerror->GetdX()/2.,meanerror->GetSigmaY());
+    auto hsummary=(ejungwoo::histsummary*)array->At(i);
+    graph->SetPoint(i,hsummary->GetMeanX(),hsummary->GetMeanY());
+    graph->SetPointError(i,hsummary->GetdX()/2.,hsummary->GetSigmaY());
   }
   return make_ge(graph);
 }
 
 
 /**
- * Using the data from fitgsy_list
+ * Using the data from hlist_fitgsy
  *
  * @param hist input histogram for analysis
  * @param ndivisions number of division through y
  * @param c c*sigma become the range of the fit
- * @param entry_cut the fit is ignored if the histogram entry is smaller than this cut
+ * @param integral_cut the fit is ignored if the histogram entry is smaller than this cut
  */
-TGraphErrors *ejungwoo::fitgsy(TH1 *hist, int ndivisions, double c, int entry_cut) {
+TGraphErrors *ejungwoo::fitgsy(TH1 *hist, int ndivisions, double c, int integral_cut) {
   auto h2 = (TH2 *) hist;
   auto graph=new TGraphErrors();
-  auto array=fitgsy_list(h2,ndivisions,c,entry_cut);
+  auto array=hlist_fitgsy(h2,ndivisions,c,integral_cut);
   for (auto i=0; i<array->GetEntries(); ++i) {
-    auto meanerror=(ejungwoo::histstat*)array->At(i);
-    graph->SetPoint(i,meanerror->GetMeanX(),meanerror->GetMeanX());
-    graph->SetPointError(i,meanerror->GetSigmaX(),meanerror->GetdY()/2.);
+    auto hsummary=(ejungwoo::histsummary*)array->At(i);
+    graph->SetPoint(i,hsummary->GetMeanX(),hsummary->GetMeanX());
+    graph->SetPointError(i,hsummary->GetSigmaX(),hsummary->GetdY()/2.);
   }
   return make_ge(graph);
 }
@@ -4533,11 +4662,15 @@ TH1 *ejungwoo::tree_projection(TTree *tree,TString formula,TCut cut,TString name
     TString binningString = TString("(") + nx + "," + dbstr(x1) + "," + dbstr(x2) + ")";
     TString drawOptString = "";
     if (ny>0) {
-      drawOptString = ",\"lcolz\"";
+      drawOptString = ", \"lcolz\"";
       binningString = TString("(") + nx + "," + dbstr(x1) + "," + dbstr(x2) + "," + ny + "," + dbstr(y1) + "," + dbstr(y2) + ")";
     }
 
-    std::cout<<tree->GetName()<<" -> Draw(\""<<formula<<">>"<<name<<binningString<<"\", \""<<TString(cut)<<"\"" + drawOptString +"); // ";
+    TString printCut = ", \""+TString(cut)+"\"";
+    if (fShortInfoPrint)
+      printCut = ", _";
+
+    std::cout<<tree->GetName()<<" -> Draw(\""<<formula<<">> "<<name<<binningString<<"\""<<printCut<<drawOptString +"); // ";
   }
 
   Long64_t hentries = 0;
