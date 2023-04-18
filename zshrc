@@ -1,23 +1,25 @@
+# >>> oh-my-zsh >>>
 export ZSH=$HOME/.oh-my-zsh
-#ZSH_THEME="robbyrussell"
-#ZH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
-ZSH_THEME="random"
-#CASE_SENSITIVE="true"
-#HYPHEN_INSENSITIVE="true"
-#zstyle ':omz:update' mode disabled  # disable automatic updates
+ZSH_THEME="robbyrussell"
 zstyle ':omz:update' mode auto      # update automatically without asking
-#zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-#DISABLE_MAGIC_FUNCTIONS="true"
-#DISABLE_LS_COLORS="true"
-#DISABLE_AUTO_TITLE="true"
-#ENABLE_CORRECTION="true"
-#COMPLETION_WAITING_DOTS="true"
-#DISABLE_UNTRACKED_FILES_DIRTY="true"
-#HIST_STAMPS="mm/dd/yyyy"
-#ZSH_CUSTOM=/path/to/new-custom-folder
 plugins=(git)
-
 source $ZSH/oh-my-zsh.sh
+# <<< conda initialize <<<
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/ejungwoo/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/ejungwoo/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
 
 # general
 alias rm='rm -i'
@@ -29,7 +31,9 @@ alias ssh='ssh -Y -A -C'
 alias scpl='scp -l 8192'
 alias count='ls -afq | wc -l'
 
+# root python
 alias roo='root -n'
+alias py3='python3'
 
 # git
 alias gitl='git lg'
@@ -52,24 +56,15 @@ alias jpt1='explorer.exe "C:\Users\ejungwoo\Documents\Hands On Machine Learning 
 alias jpt2='explorer.exe "C:\Users\ejungwoo\Documents\Hands On Machine Learning (homl).pdf";cd /home/ejungwoo/homl; python3 -m jupyter notebook --no-browser --port=8890'
 alias jpt3='explorer.exe "C:\Users\ejungwoo\Documents\Hands On Machine Learning (homl).pdf";cd /home/ejungwoo/homl; python3 -m jupyter notebook --no-browser --port=8891'
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/ejungwoo/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/home/ejungwoo/anaconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+function ej() {
+  conda activate ej
+}
 
-function enp() {
-  conda activate np
-  export NEST_PATH="/home/ejungwoo/nest/"
+function eroot() {
+  conda activate eroot
+  echo "ROOT installed from conda"
+  export LILAK_PATH="/home/ejungwoo/lilak"
+  export PATH="/home/ejungwoo/.local/bin:$PATH"
 }
 
 function espirit() {

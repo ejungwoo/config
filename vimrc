@@ -5,8 +5,8 @@ set ruler
 set nu
 set smartindent
 set hlsearch
-set tabstop=2
-set sw=2
+set tabstop=4
+set sw=4
 set formatoptions=croql
 set expandtab
 set clipboard=unnamed
@@ -22,7 +22,6 @@ endif
 "colorscheme onehalfdark
 "colorscheme onehalflight
 "colorscheme jellybeans
-
 "colorscheme artesanal
 "colorscheme jellybeans
 colorscheme smyck
