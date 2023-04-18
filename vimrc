@@ -23,5 +23,6 @@ endif
 "colorscheme onehalflight
 "colorscheme jellybeans
 
-colorscheme artesanal
+"colorscheme artesanal
 "colorscheme jellybeans
+colorscheme smyck
