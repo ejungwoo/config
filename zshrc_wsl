@@ -1,0 +1,97 @@
+# >>> oh-my-zsh >>>
+export ZSH=$HOME/.oh-my-zsh
+ZSH_THEME="robbyrussell"
+zstyle ':omz:update' mode auto      # update automatically without asking
+plugins=(git)
+source $ZSH/oh-my-zsh.sh
+# <<< conda initialize <<<
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/ejungwoo/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/ejungwoo/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/ejungwoo/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+# general
+alias rm='rm -i'
+alias vi='vim -p'
+alias iv='vi'
+alias l='ls -CF'
+alias ll='ls -lh'
+alias ssh='ssh -Y -A -C'
+alias scpl='scp -l 8192'
+alias count='ls -afq | wc -l'
+
+# root python
+alias root='root -l'
+alias roow='root --web=on'
+alias py3='python3'
+
+alias gitl='git lg'
+alias gits='git status -uno'
+alias gitb='git branch -av'
+alias gitut='git clean -fd --dry-run'
+alias gitls='git ls-tree -r HEAD --name-only'
+alias gitd='git diff -U0'
+alias gitr='git remote -v'
+#alias gitl='git log --pretty=format:"%C(yellow)%h%Creset - %C(cyan)%an%Creset, %C(green)%ar (%ad)%Creset : %s" --date=format:%Y-%m-%d'
+function gitv() {
+    GIT_BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+    GIT_BRANCH_COUNT=$(git rev-list --count $GIT_BRANCH_NAME)
+    GIT_BRANCH_HASH=$(git rev-parse --short $GIT_BRANCH_NAME)
+    echo $GIT_BRANCH_NAME.$GIT_BRANCH_COUNT.$GIT_BRANCH_HASH
+}
+
+source /home/ejungwoo/root/root_build/bin/thisroot.sh
+source /home/ejungwoo/geant4/geant4-v11.2.2-install/bin/geant4.sh
+source /home/ejungwoo/lilak/lilak.sh
+source /home/ejungwoo/nptool/nptool.sh
+export GARFIELD_HOME=/home/ejungwoo/garfieldpp
+source $GARFIELD_HOME/install/share/Garfield/setupGarfield.sh
+
+#export DISPLAY="`grep nameserver /etc/resolv.conf | sed 's/nameserver //'`:0"
+#export LIBGL_ALWAYS_INDIRECT=1
+
+#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print$2}'):0
+#export LIBGL_ALWAYS_INDIRECT=0
+#export DISPLAY=localhost:0.0
+
+function vio() {
+    # Concatenate all arguments into a single string
+    local error_line="$*"
+    local file_path="$(echo "$error_line" | cut -d':' -f1)"
+    local line_number="$(echo "$error_line" | cut -d':' -f2)"
+    local file_extension="${file_path##*.}"
+    local complementary_file_path
+
+    # Determine the base name without the file extension
+    local base_name="$(basename "$file_path" ."$file_extension")"
+    local dir_name="$(dirname "$file_path")"
+
+    # Decide complementary file path based on the current file extension
+    if [ "$file_extension" = "h" ]; then
+        complementary_file_path="${dir_name}/${base_name}.cpp"
+    elif [ "$file_extension" = "cpp" ]; then
+        complementary_file_path="${dir_name}/${base_name}.h"
+    else
+        # If the file is not a recognized C++ file, just open the file at the specified line
+        vim "$file_path" +"$line_number"
+        return
+    fi
+
+    # Check if the complementary file exists and open it alongside the original file
+    if [ -f "$complementary_file_path" ]; then
+        vim -p "$file_path" +"$line_number" "$complementary_file_path"
+    else
+        vim "$file_path" +"$line_number"
+    fi
+}

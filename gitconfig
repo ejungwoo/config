@@ -3,6 +3,7 @@
 	email = phyjics@gmail.com
 [core]
 	excludesfile = /Users/ejungwoo/.gitignore_global
+	editor = vim
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
